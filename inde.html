@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="robots" content="noindex">
+<title>Worlds 2026 Player</title>
+<style>
+:root{
+  color-scheme:dark;
+  --void:#010A13; --panel:#0A1428; --line:#1E2D45; --gold:#C8AA6E; --gold-hi:#F0E6D2; --gold-lo:#785A28;
+  --hex:#0AC8B9; --ink:#E7E1D3; --muted:#A09B8C;
+  --f-ui:"Segoe UI Variable Text","Segoe UI",Roboto,system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--void);color:var(--ink);font-family:var(--f-ui);display:grid;grid-template-rows:auto 1fr;
+  padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.brand{font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:13px;color:var(--gold)}
+.brand span{color:var(--muted);font-weight:500;letter-spacing:.08em}
+.hbtns{display:flex;gap:8px}
+.hb{font:600 12px var(--f-ui);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:8px 12px;cursor:pointer;text-decoration:none}
+.hb:hover{border-color:var(--gold)}
+main{display:grid;place-items:center;padding:16px;min-height:0}
+.stage{position:relative;width:min(100%,calc((100vh - 110px) * 16 / 9));aspect-ratio:16/9;max-width:100%;background:#000;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.stage:fullscreen{width:100%;height:100%;border:0;border-radius:0;aspect-ratio:auto}
+#player,#player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.cover{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:16px;text-align:center;padding:24px;
+  background:radial-gradient(600px 300px at 50% 40%,rgba(10,200,185,.10),transparent 70%),#020812;z-index:2}
+.cover[hidden]{display:none}
+.cover h2{margin:0;font-size:clamp(20px,4vw,30px);font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-hi)}
+.cover p{margin:0;color:var(--muted);max-width:44ch;font-size:14px}
+.cbtns{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+.btn{font:600 14px var(--f-ui);padding:12px 18px;border-radius:8px;border:1px solid var(--gold);background:var(--gold);color:var(--void);cursor:pointer;text-decoration:none}
+.btn.ghost{background:transparent;color:var(--gold-hi);border-color:var(--gold-lo)}
+.btn:focus-visible,.hb:focus-visible{outline:2px solid var(--hex);outline-offset:3px}
+.msg{color:var(--muted);text-align:center;padding:24px}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Worlds 2026 <span>· Player</span></div>
+  <div class="hbtns">
+    <button class="hb" type="button" id="fs">Fullscreen</button>
+    <a class="hb" id="yt" href="#" target="_blank" rel="noopener">Open on YouTube</a>
+  </div>
+</header>
+<main>
+  <div class="stage" id="stage">
+    <div id="player"></div>
+    <div class="cover" id="cover-pause" hidden>
+      <h2>Paused</h2>
+      <p>The player is covered so YouTube's suggestions stay out of sight.</p>
+      <div class="cbtns"><button class="btn" type="button" id="resume">Resume</button></div>
+    </div>
+    <div class="cover" id="cover-end" hidden>
+      <h2>Series finished</h2>
+      <p>Close this tab and mark the series as watched in your schedule.</p>
+      <div class="cbtns"><button class="btn ghost" type="button" id="again">Watch again</button></div>
+    </div>
+  </div>
+</main>
+<script>
+(function(){
+  var id=new URLSearchParams(location.search).get("v")||"";
+  if(!/^[A-Za-z0-9_-]{11}$/.test(id)){
+    document.querySelector("main").innerHTML='<p class="msg">No video selected. Open this player from your Worlds schedule.</p>';
+    document.getElementById("yt").hidden=true; document.getElementById("fs").hidden=true; return;
+  }
+  document.getElementById("yt").href="https://www.youtube.com/watch?v="+id;
+  var pause=document.getElementById("cover-pause"), end=document.getElementById("cover-end"), player=null;
+
+  // Own fullscreen on the wrapper (YouTube's fullscreen is disabled with fs=0) so the covers keep working in fullscreen.
+  var stage=document.getElementById("stage");
+  document.getElementById("fs").onclick=function(){
+    if(document.fullscreenElement) document.exitFullscreen();
+    else if(stage.requestFullscreen) stage.requestFullscreen().catch(function(){});
+  };
+  if(!document.fullscreenEnabled) document.getElementById("fs").hidden=true;
+
+  window.onYouTubeIframeAPIReady=function(){
+    player=new YT.Player("player",{
+      host:"https://www.youtube-nocookie.com",
+      videoId:id,
+      playerVars:{rel:0,fs:0,modestbranding:1,playsinline:1,iv_load_policy:3,origin:location.origin},
+      events:{onStateChange:function(e){
+        pause.hidden=e.data!==YT.PlayerState.PAUSED;
+        end.hidden=e.data!==YT.PlayerState.ENDED;
+      }}
+    });
+  };
+  document.getElementById("resume").onclick=function(){ if(player) player.playVideo(); };
+  document.getElementById("again").onclick=function(){ if(player){ player.seekTo(0,true); player.playVideo(); } };
+
+  var s=document.createElement("script"); s.src="https://www.youtube.com/iframe_api"; document.head.appendChild(s);
+})();
+</script>
+</body>
+</html>
