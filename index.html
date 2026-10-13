@@ -37,6 +37,10 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
 .btn.ghost{background:transparent;color:var(--gold-hi);border-color:var(--gold-lo)}
 .btn:focus-visible,.hb:focus-visible{outline:2px solid var(--hex);outline-offset:3px}
 .msg{color:var(--muted);text-align:center;padding:24px}
+/* Fullscreen only: a transparent layer over the video (not over YouTube's control bar) that hides the idle cursor. */
+.idle{display:none;position:absolute;left:0;right:0;top:0;bottom:64px;z-index:1;cursor:default}
+.stage:fullscreen .idle{display:block}
+.idle.hide{cursor:none}
 </style>
 </head>
 <body>
@@ -50,6 +54,7 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
 <main>
   <div class="stage" id="stage">
     <div id="player"></div>
+    <div class="idle" id="idle" title="Click to play or pause, double-click to exit fullscreen"></div>
     <div class="cover" id="cover-pause" hidden>
       <h2>Paused</h2>
       <p>The player is covered so YouTube's suggestions stay out of sight.</p>
@@ -91,6 +96,24 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
       }}
     });
   };
+  // Idle cursor: hide after 2.5 s without movement over the video; any movement shows it again.
+  var idle=document.getElementById("idle"), idleTimer=null;
+  function wake(){ idle.classList.remove("hide"); clearTimeout(idleTimer); idleTimer=setTimeout(function(){ idle.classList.add("hide"); },2500); }
+  idle.addEventListener("mousemove",wake);
+  document.addEventListener("fullscreenchange",function(){ if(document.fullscreenElement) wake(); else { clearTimeout(idleTimer); idle.classList.remove("hide"); } });
+  function togglePlay(){ if(!player||!player.getPlayerState) return; var s=player.getPlayerState(); if(s===YT.PlayerState.PLAYING) player.pauseVideo(); else player.playVideo(); }
+  // The layer covers the video, so it takes over YouTube's own click behaviour: click toggles play, double-click leaves fullscreen.
+  var clickTimer=null;
+  idle.addEventListener("click",function(){ clearTimeout(clickTimer); clickTimer=setTimeout(togglePlay,220); });
+  idle.addEventListener("dblclick",function(){ clearTimeout(clickTimer); if(document.fullscreenElement) document.exitFullscreen(); });
+  // Keyboard shortcuts when the page (not the YouTube frame) has focus: space/k play-pause, f fullscreen, arrows seek 10 s.
+  document.addEventListener("keydown",function(e){
+    if(!player||!player.getCurrentTime||e.target.closest("button,a")) return;
+    if(e.key===" "||e.key==="k"){ e.preventDefault(); togglePlay(); }
+    else if(e.key==="f"){ e.preventDefault(); document.getElementById("fs").click(); }
+    else if(e.key==="ArrowRight"){ e.preventDefault(); player.seekTo(player.getCurrentTime()+10,true); }
+    else if(e.key==="ArrowLeft"){ e.preventDefault(); player.seekTo(Math.max(0,player.getCurrentTime()-10),true); }
+  });
   document.getElementById("resume").onclick=function(){ if(player) player.playVideo(); };
   document.getElementById("again").onclick=function(){ if(player){ player.seekTo(0,true); player.playVideo(); } };
 
