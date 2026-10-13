@@ -40,7 +40,7 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
 /* Fullscreen only: a transparent layer over the video (not over YouTube's control bar) that hides the idle cursor. */
 .idle{display:none;position:absolute;left:0;right:0;top:0;bottom:64px;z-index:1;cursor:default}
 .stage:fullscreen .idle{display:block}
-.idle.hide{cursor:none}
+.idle.hide{cursor:none;bottom:0}
 </style>
 </head>
 <body>
@@ -93,18 +93,28 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
       events:{onStateChange:function(e){
         pause.hidden=e.data!==YT.PlayerState.PAUSED;
         end.hidden=e.data!==YT.PlayerState.ENDED;
+        onPlayState(e.data===YT.PlayerState.PLAYING);
       }}
     });
   };
-  // Idle cursor: hide after 2.5 s without movement over the video; any movement shows it again.
-  var idle=document.getElementById("idle"), idleTimer=null;
-  function wake(){ idle.classList.remove("hide"); clearTimeout(idleTimer); idleTimer=setTimeout(function(){ idle.classList.add("hide"); },2500); }
+  // Idle cursor. The page cannot see the mouse while it is over YouTube's own frame, so the timer runs on
+  // playback instead: 2.5 s after playing starts (or after the last movement over our layer), the layer grows
+  // over the whole video, control bar included, and hides the cursor. Any movement shrinks it back.
+  var idle=document.getElementById("idle"), idleTimer=null, playing=false;
+  function scheduleHide(){ clearTimeout(idleTimer); if(document.fullscreenElement&&playing) idleTimer=setTimeout(function(){ idle.classList.add("hide"); },2500); }
+  function wake(){ idle.classList.remove("hide"); scheduleHide(); }
   idle.addEventListener("mousemove",wake);
   document.addEventListener("fullscreenchange",function(){ if(document.fullscreenElement) wake(); else { clearTimeout(idleTimer); idle.classList.remove("hide"); } });
+  function onPlayState(isPlaying){ playing=isPlaying; if(playing) scheduleHide(); else { clearTimeout(idleTimer); idle.classList.remove("hide"); } }
   function togglePlay(){ if(!player||!player.getPlayerState) return; var s=player.getPlayerState(); if(s===YT.PlayerState.PLAYING) player.pauseVideo(); else player.playVideo(); }
   // The layer covers the video, so it takes over YouTube's own click behaviour: click toggles play, double-click leaves fullscreen.
+  // A click on the control-bar strip while the layer covers it only brings the bar back, so you never pause by accident.
   var clickTimer=null;
-  idle.addEventListener("click",function(){ clearTimeout(clickTimer); clickTimer=setTimeout(togglePlay,220); });
+  idle.addEventListener("click",function(e){
+    var r=idle.getBoundingClientRect(), onBar=idle.classList.contains("hide")&&(e.clientY>r.bottom-64);
+    if(onBar){ wake(); return; }
+    clearTimeout(clickTimer); clickTimer=setTimeout(togglePlay,220);
+  });
   idle.addEventListener("dblclick",function(){ clearTimeout(clickTimer); if(document.fullscreenElement) document.exitFullscreen(); });
   // Keyboard shortcuts when the page (not the YouTube frame) has focus: space/k play-pause, f fullscreen, arrows seek 10 s.
   document.addEventListener("keydown",function(e){
