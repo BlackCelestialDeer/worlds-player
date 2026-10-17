@@ -1,0 +1,88 @@
+# Keeps feed.json up to date with Caedrel's Worlds uploads, so the watch schedule sync can read them.
+# YouTube blocks Claude's tools from its RSS feed, but not GitHub's servers.
+name: Update feed
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # every 30 minutes (GitHub may run it a few minutes late)
+  workflow_dispatch: {}       # also runnable by hand from the Actions tab
+
+permissions:
+  contents: write   # commit feed.json
+  pages: write      # ask GitHub Pages to republish
+
+concurrency:
+  group: feed
+  cancel-in-progress: false
+
+jobs:
+  feed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch and merge Caedrel's Worlds uploads
+        run: |
+          python3 - <<'PY'
+          import json, os, sys, time, urllib.request
+          import xml.etree.ElementTree as ET
+
+          CHANNEL = "UCOFiUtKui6-x4T-J7_DgCag"   # @Caedrel (main channel)
+          URL = f"https://www.youtube.com/feeds/videos.xml?channel_id={CHANNEL}"
+          NS = {"a": "http://www.w3.org/2005/Atom", "yt": "http://www.youtube.com/xml/schemas/2015"}
+
+          xml = None
+          for attempt in range(3):
+              try:
+                  req = urllib.request.Request(URL, headers={"User-Agent": "Mozilla/5.0 (worlds-player feed)"})
+                  xml = urllib.request.urlopen(req, timeout=30).read()
+                  break
+              except Exception as e:
+                  print(f"attempt {attempt+1} failed: {e}")
+                  time.sleep(10)
+          if xml is None:
+              print("YouTube feed unavailable; keeping the existing feed.json")
+              sys.exit(0)
+
+          root = ET.fromstring(xml)
+          fresh = {}
+          for e in root.findall("a:entry", NS):
+              vid = e.findtext("yt:videoId", default="", namespaces=NS)
+              title = e.findtext("a:title", default="", namespaces=NS)
+              published = e.findtext("a:published", default="", namespaces=NS)
+              if vid and "WORLDS" in title.upper():
+                  fresh[vid] = {"id": vid, "title": title, "published": published}
+
+          # Merge with what we already have: the YouTube feed only lists the latest 15 uploads.
+          old = {}
+          if os.path.exists("feed.json"):
+              try:
+                  old = {v["id"]: v for v in json.load(open("feed.json")).get("videos", [])}
+              except Exception:
+                  old = {}
+          merged = {**old, **fresh}
+          videos = sorted(merged.values(), key=lambda v: v["published"], reverse=True)[:400]
+
+          out = {"channel": "@Caedrel", "channelId": CHANNEL, "videos": videos}
+          new_text = json.dumps(out, ensure_ascii=False, indent=1)
+          if os.path.exists("feed.json") and open("feed.json").read() == new_text:
+              print("no new uploads")
+              sys.exit(0)
+          open("feed.json", "w").write(new_text)
+          print(f"{len(fresh)} Worlds uploads in the YouTube feed, {len(videos)} kept in total")
+          PY
+
+      - name: Commit and republish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- feed.json && git ls-files --error-unmatch feed.json >/dev/null 2>&1; then
+            echo "nothing to commit"; exit 0
+          fi
+          git config user.name "feed-bot"
+          git config user.email "feed-bot@users.noreply.github.com"
+          git add feed.json
+          git commit -m "Update feed"      # neutral message: no titles in the repo history view
+          git push
+          # Pushes made by this job don't always trigger a Pages rebuild, so request one explicitly.
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" >/dev/null || echo "Pages build request skipped"
