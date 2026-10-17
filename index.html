@@ -147,12 +147,11 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
   }
 
   // ---------- Twitch VOD of a broadcast day ----------
-  // Params: tw=1, day=YYYY-MM-DD, time=HH:MM (broadcast start, Amsterdam), k=series id, s=optional estimated series start (unix seconds).
+  // Params: tw=1, day=YYYY-MM-DD, time=HH:MM (broadcast start, Amsterdam). Other params are ignored.
   if(q.get("tw")!=="1"||!/^\d{4}-\d{2}-\d{2}$/.test(q.get("day")||"")||!/^\d{2}:\d{2}$/.test(q.get("time")||""))
     return fail("No video selected. Open this player from your Worlds schedule.");
   $("src").textContent="· Twitch VOD";
-  var key=q.get("k")||"", broadcast=new Date(q.get("day")+"T"+q.get("time")+":00").getTime();
-  var est=q.get("s")?parseInt(q.get("s"),10)*1000:NaN;
+  var broadcast=new Date(q.get("day")+"T"+q.get("time")+":00").getTime();
   $("loadmsg").textContent="Finding Caedrel's Twitch VOD…";
 
   // Ask Twitch for Caedrel's recent broadcasts (ids, start times and lengths only, never titles).
@@ -177,12 +176,11 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
   .catch(function(){ fail("Could not reach Twitch. Check your connection and try again."); });
 
   function startTwitch(v){
-    // Where to start: your saved spot in this series; otherwise the later of the estimated series start and
-    // where you stopped in this VOD (in order, the previous series of the day is already watched).
-    var startMs=isNaN(est)?broadcast-2*60e3:est-5*60e3;
-    var guess=Math.max(0,(startMs-v.c)/1000), vodPos=recall("tw:"+v.id), seriesPos=key?recall("tws:"+key):null;
-    var at=seriesPos!=null?seriesPos:Math.max(guess,vodPos||0);
-    againAt=guess;
+    // Where to start: where you last stopped in this VOD (the schedule rolls, so that is where the next series
+    // begins); otherwise 2 minutes before the broadcast start. Never an estimate, so never late.
+    var bStartPos=Math.max(0,(broadcast-2*60e3-v.c)/1000), vodPos=recall("tw:"+v.id);
+    var at=vodPos!=null?vodPos:bStartPos;
+    againAt=bStartPos;
     $("ext").href="https://www.twitch.tv/videos/"+v.id+"?t="+hms(at); $("ext").textContent="Open on Twitch"; $("ext").hidden=false;
 
     addScript("https://player.twitch.tv/js/embed/v1.js").onload=function(){
@@ -193,8 +191,8 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
       tp.addEventListener(Twitch.Player.ENDED,function(){ onState("ended"); });
       P={play:function(){tp.play();},pause:function(){tp.pause();},isPlaying:function(){return !tp.getPaused();},
          time:function(){return tp.getCurrentTime();},seek:function(t){tp.seek(t);}};
-      // Remember the spot every few seconds, per series and per VOD.
-      setInterval(function(){ if(!playing) return; var t=tp.getCurrentTime(); if(t>0){ store("tw:"+v.id,t); if(key) store("tws:"+key,t); } },5000);
+      // Remember the spot in this VOD every few seconds.
+      setInterval(function(){ if(!playing) return; var t=tp.getCurrentTime(); if(t>0) store("tw:"+v.id,t); },5000);
     };
   }
 })();
