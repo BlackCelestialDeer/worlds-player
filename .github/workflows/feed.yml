@@ -29,25 +29,31 @@ jobs:
           import xml.etree.ElementTree as ET
 
           CHANNEL = "UCOFiUtKui6-x4T-J7_DgCag"   # @Caedrel (main channel)
-          URL = f"https://www.youtube.com/feeds/videos.xml?channel_id={CHANNEL}"
+          # Two views of the same uploads: YouTube's channel feed regularly fails or lags for hours,
+          # the uploads-playlist feed is the backup. Both are read and merged.
+          URLS = [f"https://www.youtube.com/feeds/videos.xml?channel_id={CHANNEL}",
+                  f"https://www.youtube.com/feeds/videos.xml?playlist_id=UU{CHANNEL[2:]}"]
           NS = {"a": "http://www.w3.org/2005/Atom", "yt": "http://www.youtube.com/xml/schemas/2015"}
 
-          xml = None
-          for attempt in range(3):
-              try:
-                  req = urllib.request.Request(URL, headers={"User-Agent": "Mozilla/5.0 (worlds-player feed)"})
-                  xml = urllib.request.urlopen(req, timeout=30).read()
-                  break
-              except Exception as e:
-                  print(f"attempt {attempt+1} failed: {e}")
-                  time.sleep(10)
-          if xml is None:
-              print("YouTube feed unavailable; keeping the existing feed.json")
-              sys.exit(0)
+          def fetch(url):
+              for attempt in range(4):
+                  try:
+                      req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (worlds-player feed)"})
+                      return urllib.request.urlopen(req, timeout=30).read()
+                  except Exception as e:
+                      print(f"{url[-40:]}: attempt {attempt+1} failed: {e}")
+                      time.sleep(15)
+              return None
 
-          root = ET.fromstring(xml)
+          xmls = [x for x in map(fetch, URLS) if x]
+          if not xmls:
+              # Fail visibly (red in the Actions tab); the next run tries again.
+              print("YouTube feeds unavailable; keeping the existing feed.json")
+              sys.exit(1)
+
           fresh = {}
-          for e in root.findall("a:entry", NS):
+          entries = [e for x in xmls for e in ET.fromstring(x).findall("a:entry", NS)]
+          for e in entries:
               vid = e.findtext("yt:videoId", default="", namespaces=NS)
               title = e.findtext("a:title", default="", namespaces=NS)
               published = e.findtext("a:published", default="", namespaces=NS)
