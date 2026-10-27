@@ -1,10 +1,11 @@
-# Keeps feed.json up to date with Caedrel's Worlds uploads, so the watch schedule sync can read them.
+# Keeps feed.json up to date with Caedrel's uploads during Worlds, so the watch schedule sync can read them.
 # YouTube blocks Claude's tools from its RSS feed, but not GitHub's servers.
 name: Update feed
 
 on:
   schedule:
-    - cron: "*/30 * * * *"   # every 30 minutes (GitHub may run it a few minutes late)
+    # Off-peak minutes: GitHub delays or skips scheduled runs at :00 and :30 when busy.
+    - cron: "13,43 * * * *"
   workflow_dispatch: {}       # also runnable by hand from the Actions tab
 
 permissions:
@@ -21,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fetch and merge Caedrel's Worlds uploads
+      - name: Fetch and merge Caedrel's uploads
         run: |
           python3 - <<'PY'
           import json, os, sys, time, urllib.request
@@ -50,7 +51,8 @@ jobs:
               vid = e.findtext("yt:videoId", default="", namespaces=NS)
               title = e.findtext("a:title", default="", namespaces=NS)
               published = e.findtext("a:published", default="", namespaces=NS)
-              if vid and "WORLDS" in title.upper():
+              # Every upload since 1 October: titles don't always say "WORLDS"; the sync decides what is a series.
+              if vid and published >= "2026-10-01":
                   fresh[vid] = {"id": vid, "title": title, "published": published}
 
           # Merge with what we already have: the YouTube feed only lists the latest 15 uploads.
@@ -69,7 +71,7 @@ jobs:
               print("no new uploads")
               sys.exit(0)
           open("feed.json", "w").write(new_text)
-          print(f"{len(fresh)} Worlds uploads in the YouTube feed, {len(videos)} kept in total")
+          print(f"{len(fresh)} uploads in the YouTube feed, {len(videos)} kept in total")
           PY
 
       - name: Commit and republish
