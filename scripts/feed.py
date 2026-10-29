@@ -63,6 +63,14 @@ def from_page(html):
                 title = "".join(r.get("text", "") for r in v.get("title", {}).get("runs", []))
                 pub = ago((v.get("publishedTimeText") or {}).get("simpleText", ""), now)
                 out[v["videoId"]] = {"id": v["videoId"], "title": title, "published": pub, "approx": True}
+            lv = o.get("lockupViewModel")   # the newer page format
+            if isinstance(lv, dict) and lv.get("contentId") and "VIDEO" in str(lv.get("contentType", "VIDEO")):
+                meta = (lv.get("metadata") or {}).get("lockupMetadataViewModel") or {}
+                title = (meta.get("title") or {}).get("content", "")
+                texts = re.findall(r'"content":\s*"([^"]*ago)"', json.dumps(meta))
+                pub = ago(texts[0] if texts else "", now)
+                if title:
+                    out[lv["contentId"]] = {"id": lv["contentId"], "title": title, "published": pub, "approx": True}
             for x in o.values():
                 walk(x)
         elif isinstance(o, list):
