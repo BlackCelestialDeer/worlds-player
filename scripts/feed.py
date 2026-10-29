@@ -68,24 +68,32 @@ def from_page(html):
     return out
 
 
-fresh, worked = {}, False
-for url in RSS:
+fresh, worked, report = {}, False, []
+for name, url in zip(["rss-channel", "rss-playlist"], RSS):
     x = get(url)
     if x:
         try:
-            fresh.update(from_rss(x)); worked = True
+            got = from_rss(x); fresh.update(got); worked = True
+            report.append(f"{name} {len(got)}")
         except Exception as e:
-            print(f"  RSS parse failed: {e}")
+            print(f"  RSS parse failed: {e}"); report.append(f"{name} parse-error")
+    else:
+        report.append(f"{name} down")
 page = get(PAGE, tries=2)
+if not page:
+    report.append("page down")
 if page:
     try:
         found = from_page(page)
+        report.append(f"page {len(found)}")
         worked = worked or bool(found)
         for vid, v in found.items():
             fresh.setdefault(vid, v)   # RSS data (exact time) wins over the page's approximate time
     except Exception as e:
         print(f"  page parse failed: {e}")
 
+# Shown as an annotation on the run, readable without opening the logs.
+print("::notice title=feed sources::" + ", ".join(report) + f"; newest {max((v['published'] for v in fresh.values()), default='-')[:16]}")
 if not worked:
     print("All YouTube sources failed; feed.json unchanged")
     sys.exit(1)
