@@ -70,6 +70,8 @@ def from_page(html):
                 title = (meta.get("title") or {}).get("content", "")
                 texts = re.findall(r'"content":\s*"([^"]*ago)"', json.dumps(meta, ensure_ascii=False))
                 pub = ago(texts[0] if texts else "", now)
+                if texts and not pub and not DIAG:
+                    DIAG.append("ago-fail " + repr(texts[0][-40:]))
                 if not texts and not DIAG:
                     t = json.dumps(meta, ensure_ascii=False).replace(title, "<title>")
                     DIAG.append(re.sub(r"[A-Za-z]{12,}", "~", t)[:400])
