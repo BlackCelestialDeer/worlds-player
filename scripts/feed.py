@@ -15,6 +15,9 @@ NS = {"a": "http://www.w3.org/2005/Atom", "yt": "http://www.youtube.com/xml/sche
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 
 
+ERRORS = []
+
+
 def get(url, tries=3):
     for i in range(tries):
         try:
@@ -22,6 +25,7 @@ def get(url, tries=3):
             return urllib.request.urlopen(req, timeout=30).read()
         except Exception as e:
             print(f"  {url[-45:]}: try {i+1} failed: {e}")
+            ERRORS.append(str(e)[:60])
             time.sleep(10)
     return None
 
@@ -86,6 +90,10 @@ if page:
     try:
         found = from_page(page)
         report.append(f"page {len(found)}")
+        if not found:   # what did we get instead? (consent wall, new page format...)
+            low = page.lower()
+            report.append("page-shape " + " ".join(f"{k}={low.count(k.encode())}" for k in
+                          ["ytinitialdata", "videorenderer", "lockupviewmodel", "videoid", "consent", "captcha"]) + f" len={len(page)}")
         worked = worked or bool(found)
         for vid, v in found.items():
             fresh.setdefault(vid, v)   # RSS data (exact time) wins over the page's approximate time
@@ -93,7 +101,7 @@ if page:
         print(f"  page parse failed: {e}")
 
 # Shown as an annotation on the run, readable without opening the logs.
-print("::notice title=feed sources::" + ", ".join(report) + f"; newest {max((v['published'] for v in fresh.values()), default='-')[:16]}")
+print("::notice title=feed sources::" + ", ".join(report) + (f"; errors: {sorted(set(ERRORS))[:3]}" if ERRORS else "") + f"; newest {max((v['published'] for v in fresh.values()), default='-')[:16]}")
 if not worked:
     print("All YouTube sources failed; feed.json unchanged")
     sys.exit(1)
