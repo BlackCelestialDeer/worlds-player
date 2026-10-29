@@ -16,7 +16,6 @@ UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like 
 
 
 ERRORS = []
-DIAG = []
 
 
 def get(url, tries=3):
@@ -43,10 +42,13 @@ def from_rss(xml):
 
 def ago(text, now):
     # "5 hours ago", "Streamed 2 days ago" -> approximate ISO time (only used when RSS doesn't know the video).
-    m = re.search(r"(\d+)\s+(second|minute|hour|day|week|month|year)s?\s+ago", text or "")
+    # Long ("5 hours ago") or compact ("5h ago", "3d ago", "1mo ago") forms.
+    m = re.search(r"(\d+)\s*(seconds?|s|minutes?|min|m|hours?|h|days?|d|weeks?|w|months?|mo|years?|y)\s+ago", text or "")
     if not m:
         return ""
-    n, unit = int(m.group(1)), m.group(2)
+    n, u = int(m.group(1)), m.group(2)
+    unit = ("month" if u.startswith("mo") else "minute" if u.startswith("m") else
+            {"s": "second", "h": "hour", "d": "day", "w": "week", "y": "year"}[u[0]])
     secs = {"second": 1, "minute": 60, "hour": 3600, "day": 86400, "week": 604800, "month": 2592000, "year": 31536000}[unit]
     return (now - timedelta(seconds=n * secs)).replace(microsecond=0).isoformat()
 
@@ -70,11 +72,6 @@ def from_page(html):
                 title = (meta.get("title") or {}).get("content", "")
                 texts = re.findall(r'"content":\s*"([^"]*ago)"', json.dumps(meta, ensure_ascii=False))
                 pub = ago(texts[0] if texts else "", now)
-                if texts and not pub and not DIAG:
-                    DIAG.append("ago-fail " + repr(texts[0][-40:]))
-                if not texts and not DIAG:
-                    t = json.dumps(meta, ensure_ascii=False).replace(title, "<title>")
-                    DIAG.append(re.sub(r"[A-Za-z]{12,}", "~", t)[:400])
                 if title:
                     out[lv["contentId"]] = {"id": lv["contentId"], "title": title, "published": pub, "approx": True}
             for x in o.values():
@@ -115,7 +112,7 @@ if page:
         print(f"  page parse failed: {e}")
 
 # Shown as an annotation on the run, readable without opening the logs.
-print("::notice title=feed sources::" + ", ".join(report) + (f"; errors: {sorted(set(ERRORS))[:3]}" if ERRORS else "") + (f"; diag {DIAG[0]}" if DIAG else "") + f"; newest {max((v['published'] for v in fresh.values()), default='-')[:16]}")
+print("::notice title=feed sources::" + ", ".join(report) + (f"; errors: {sorted(set(ERRORS))[:3]}" if ERRORS else "") + f"; newest {max((v['published'] for v in fresh.values()), default='-')[:16]}")
 if not worked:
     print("All YouTube sources failed; feed.json unchanged")
     sys.exit(1)
@@ -130,8 +127,10 @@ merged = dict(old)
 for vid, v in fresh.items():
     if not v.get("published"):
         continue
-    if vid in old and not old[vid].get("approx") and v.get("approx"):
-        merged[vid]["title"] = v["title"]       # keep the exact time, take a renamed title
+    if vid in old and v.get("approx"):
+        # Keep the time we first saw (an exact RSS time, or the page's "Nm ago" from when it was fresh,
+        # which is more precise than today's "1d ago"); only take a renamed title.
+        merged[vid] = dict(old[vid], title=v["title"])
     else:
         merged[vid] = v
 videos = sorted((v for v in merged.values() if v["published"] >= SINCE), key=lambda v: v["published"], reverse=True)[:400]
