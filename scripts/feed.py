@@ -67,7 +67,7 @@ def from_page(html):
             if isinstance(lv, dict) and lv.get("contentId") and "VIDEO" in str(lv.get("contentType", "VIDEO")):
                 meta = (lv.get("metadata") or {}).get("lockupMetadataViewModel") or {}
                 title = (meta.get("title") or {}).get("content", "")
-                texts = re.findall(r'"content":\s*"([^"]*ago)"', json.dumps(meta))
+                texts = re.findall(r'"content":\s*"([^"]*ago)"', json.dumps(meta, ensure_ascii=False))
                 pub = ago(texts[0] if texts else "", now)
                 if title:
                     out[lv["contentId"]] = {"id": lv["contentId"], "title": title, "published": pub, "approx": True}
