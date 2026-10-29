@@ -9,7 +9,12 @@ name: Update feed
 on:
   schedule:
     - cron: "13 */2 * * *"
-  workflow_dispatch: {}       # also runnable by hand from the Actions tab
+  workflow_dispatch:          # also runnable by hand from the Actions tab
+    inputs:
+      once:
+        description: "Single check instead of watching for 5.5 hours"
+        type: boolean
+        default: false
 
 permissions:
   contents: write   # commit feed.json
@@ -42,6 +47,7 @@ jobs:
               git pull -q --rebase && git push -q && \
                 gh api -X POST "repos/${{ github.repository }}/pages/builds" >/dev/null || echo "push or Pages request skipped"
             fi
+            [ "${{ inputs.once }}" = "true" ] && break
             [ $SECONDS -ge $end ] && break
             sleep 600
           done
