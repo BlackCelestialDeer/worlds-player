@@ -16,6 +16,7 @@ UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like 
 
 
 ERRORS = []
+DIAG = []
 
 
 def get(url, tries=3):
@@ -69,6 +70,9 @@ def from_page(html):
                 title = (meta.get("title") or {}).get("content", "")
                 texts = re.findall(r'"content":\s*"([^"]*ago)"', json.dumps(meta, ensure_ascii=False))
                 pub = ago(texts[0] if texts else "", now)
+                if not texts and not DIAG:
+                    t = json.dumps(meta, ensure_ascii=False).replace(title, "<title>")
+                    DIAG.append(re.sub(r"[A-Za-z]{12,}", "~", t)[:400])
                 if title:
                     out[lv["contentId"]] = {"id": lv["contentId"], "title": title, "published": pub, "approx": True}
             for x in o.values():
@@ -109,7 +113,7 @@ if page:
         print(f"  page parse failed: {e}")
 
 # Shown as an annotation on the run, readable without opening the logs.
-print("::notice title=feed sources::" + ", ".join(report) + (f"; errors: {sorted(set(ERRORS))[:3]}" if ERRORS else "") + f"; newest {max((v['published'] for v in fresh.values()), default='-')[:16]}")
+print("::notice title=feed sources::" + ", ".join(report) + (f"; errors: {sorted(set(ERRORS))[:3]}" if ERRORS else "") + (f"; diag {DIAG[0]}" if DIAG else "") + f"; newest {max((v['published'] for v in fresh.values()), default='-')[:16]}")
 if not worked:
     print("All YouTube sources failed; feed.json unchanged")
     sys.exit(1)
