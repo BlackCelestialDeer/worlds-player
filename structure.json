@@ -1,0 +1,856 @@
+{
+ "115660540726095005": {
+  "dependsOn": [
+   "pi-6"
+  ],
+  "id": "sw-r1-1",
+  "label": "Round 1 \u00b7 Series 1"
+ },
+ "115660540726095007": {
+  "dependsOn": [
+   "pi-6"
+  ],
+  "id": "sw-r1-6",
+  "label": "Round 1 \u00b7 Series 6"
+ },
+ "115660540726095009": {
+  "dependsOn": [
+   "pi-6"
+  ],
+  "id": "sw-r1-4",
+  "label": "Round 1 \u00b7 Series 4"
+ },
+ "115660540726095011": {
+  "dependsOn": [
+   "pi-6"
+  ],
+  "id": "sw-r1-5",
+  "label": "Round 1 \u00b7 Series 5"
+ },
+ "115660540726095013": {
+  "dependsOn": [
+   "pi-6"
+  ],
+  "id": "sw-r1-2",
+  "label": "Round 1 \u00b7 Series 2"
+ },
+ "115660540726095015": {
+  "dependsOn": [
+   "pi-6"
+  ],
+  "id": "sw-r1-7",
+  "label": "Round 1 \u00b7 Series 7"
+ },
+ "115660540726095017": {
+  "dependsOn": [
+   "pi-6"
+  ],
+  "id": "sw-r1-8",
+  "label": "Round 1 \u00b7 Series 8"
+ },
+ "115660540726095019": {
+  "dependsOn": [
+   "pi-6"
+  ],
+  "id": "sw-r1-3",
+  "label": "Round 1 \u00b7 Series 3"
+ },
+ "115660540726095021": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8"
+  ],
+  "id": "sw-r2-2",
+  "label": "Round 2 \u00b7 Series 2"
+ },
+ "115660540726095023": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8"
+  ],
+  "id": "sw-r2-4",
+  "label": "Round 2 \u00b7 Series 4"
+ },
+ "115660540726095025": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8"
+  ],
+  "id": "sw-r2-6",
+  "label": "Round 2 \u00b7 Series 6"
+ },
+ "115660540726095027": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8"
+  ],
+  "id": "sw-r2-7",
+  "label": "Round 2 \u00b7 Series 7"
+ },
+ "115660540726095029": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8"
+  ],
+  "id": "sw-r2-1",
+  "label": "Round 2 \u00b7 Series 1"
+ },
+ "115660540726095031": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8"
+  ],
+  "id": "sw-r2-3",
+  "label": "Round 2 \u00b7 Series 3"
+ },
+ "115660540726095033": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8"
+  ],
+  "id": "sw-r2-5",
+  "label": "Round 2 \u00b7 Series 5"
+ },
+ "115660540726095035": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8"
+  ],
+  "id": "sw-r2-8",
+  "label": "Round 2 \u00b7 Series 8"
+ },
+ "115660540726095037": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8"
+  ],
+  "id": "sw-r3-3",
+  "label": "Round 3 \u00b7 Series 3"
+ },
+ "115660540726095041": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8"
+  ],
+  "id": "sw-r3-4",
+  "label": "Round 3 \u00b7 Series 4"
+ },
+ "115660540726095045": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8"
+  ],
+  "id": "sw-r3-1",
+  "label": "Round 3 \u00b7 Series 1"
+ },
+ "115660540726095047": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8"
+  ],
+  "id": "sw-r3-2",
+  "label": "Round 3 \u00b7 Series 2"
+ },
+ "115660540726095049": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8"
+  ],
+  "id": "sw-r3-5",
+  "label": "Round 3 \u00b7 Series 5"
+ },
+ "115660540726095051": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8"
+  ],
+  "id": "sw-r3-6",
+  "label": "Round 3 \u00b7 Series 6"
+ },
+ "115660540726095053": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8"
+  ],
+  "id": "sw-r3-7",
+  "label": "Round 3 \u00b7 Series 7"
+ },
+ "115660540726095057": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8"
+  ],
+  "id": "sw-r3-8",
+  "label": "Round 3 \u00b7 Series 8"
+ },
+ "115660540726095061": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8",
+   "sw-r3-1",
+   "sw-r3-2",
+   "sw-r3-3",
+   "sw-r3-4",
+   "sw-r3-5",
+   "sw-r3-6",
+   "sw-r3-7",
+   "sw-r3-8"
+  ],
+  "id": "sw-r4-1",
+  "label": "Round 4 \u00b7 Series 1"
+ },
+ "115660540726095065": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8",
+   "sw-r3-1",
+   "sw-r3-2",
+   "sw-r3-3",
+   "sw-r3-4",
+   "sw-r3-5",
+   "sw-r3-6",
+   "sw-r3-7",
+   "sw-r3-8"
+  ],
+  "id": "sw-r4-2",
+  "label": "Round 4 \u00b7 Series 2"
+ },
+ "115660540726095069": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8",
+   "sw-r3-1",
+   "sw-r3-2",
+   "sw-r3-3",
+   "sw-r3-4",
+   "sw-r3-5",
+   "sw-r3-6",
+   "sw-r3-7",
+   "sw-r3-8"
+  ],
+  "id": "sw-r4-4",
+  "label": "Round 4 \u00b7 Series 4"
+ },
+ "115660540726095073": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8",
+   "sw-r3-1",
+   "sw-r3-2",
+   "sw-r3-3",
+   "sw-r3-4",
+   "sw-r3-5",
+   "sw-r3-6",
+   "sw-r3-7",
+   "sw-r3-8"
+  ],
+  "id": "sw-r4-3",
+  "label": "Round 4 \u00b7 Series 3"
+ },
+ "115660540726095077": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8",
+   "sw-r3-1",
+   "sw-r3-2",
+   "sw-r3-3",
+   "sw-r3-4",
+   "sw-r3-5",
+   "sw-r3-6",
+   "sw-r3-7",
+   "sw-r3-8"
+  ],
+  "id": "sw-r4-5",
+  "label": "Round 4 \u00b7 Series 5"
+ },
+ "115660540726095081": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8",
+   "sw-r3-1",
+   "sw-r3-2",
+   "sw-r3-3",
+   "sw-r3-4",
+   "sw-r3-5",
+   "sw-r3-6",
+   "sw-r3-7",
+   "sw-r3-8"
+  ],
+  "id": "sw-r4-6",
+  "label": "Round 4 \u00b7 Series 6"
+ },
+ "115660540726095085": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8",
+   "sw-r3-1",
+   "sw-r3-2",
+   "sw-r3-3",
+   "sw-r3-4",
+   "sw-r3-5",
+   "sw-r3-6",
+   "sw-r3-7",
+   "sw-r3-8",
+   "sw-r4-1",
+   "sw-r4-2",
+   "sw-r4-3",
+   "sw-r4-4",
+   "sw-r4-5",
+   "sw-r4-6"
+  ],
+  "id": "sw-r5-1",
+  "label": "Round 5 \u00b7 Series 1"
+ },
+ "115660540726095089": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8",
+   "sw-r3-1",
+   "sw-r3-2",
+   "sw-r3-3",
+   "sw-r3-4",
+   "sw-r3-5",
+   "sw-r3-6",
+   "sw-r3-7",
+   "sw-r3-8",
+   "sw-r4-1",
+   "sw-r4-2",
+   "sw-r4-3",
+   "sw-r4-4",
+   "sw-r4-5",
+   "sw-r4-6"
+  ],
+  "id": "sw-r5-2",
+  "label": "Round 5 \u00b7 Series 2"
+ },
+ "115660540726095093": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8",
+   "sw-r3-1",
+   "sw-r3-2",
+   "sw-r3-3",
+   "sw-r3-4",
+   "sw-r3-5",
+   "sw-r3-6",
+   "sw-r3-7",
+   "sw-r3-8",
+   "sw-r4-1",
+   "sw-r4-2",
+   "sw-r4-3",
+   "sw-r4-4",
+   "sw-r4-5",
+   "sw-r4-6"
+  ],
+  "id": "sw-r5-3",
+  "label": "Round 5 \u00b7 Series 3"
+ },
+ "115660540726095097": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8",
+   "sw-r3-1",
+   "sw-r3-2",
+   "sw-r3-3",
+   "sw-r3-4",
+   "sw-r3-5",
+   "sw-r3-6",
+   "sw-r3-7",
+   "sw-r3-8",
+   "sw-r4-1",
+   "sw-r4-2",
+   "sw-r4-3",
+   "sw-r4-4",
+   "sw-r4-5",
+   "sw-r4-6",
+   "sw-r5-1",
+   "sw-r5-2",
+   "sw-r5-3"
+  ],
+  "id": "ko-qf1",
+  "label": "Quarterfinal 1"
+ },
+ "115660540726095103": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8",
+   "sw-r3-1",
+   "sw-r3-2",
+   "sw-r3-3",
+   "sw-r3-4",
+   "sw-r3-5",
+   "sw-r3-6",
+   "sw-r3-7",
+   "sw-r3-8",
+   "sw-r4-1",
+   "sw-r4-2",
+   "sw-r4-3",
+   "sw-r4-4",
+   "sw-r4-5",
+   "sw-r4-6",
+   "sw-r5-1",
+   "sw-r5-2",
+   "sw-r5-3"
+  ],
+  "id": "ko-qf2",
+  "label": "Quarterfinal 2"
+ },
+ "115660540726095109": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8",
+   "sw-r3-1",
+   "sw-r3-2",
+   "sw-r3-3",
+   "sw-r3-4",
+   "sw-r3-5",
+   "sw-r3-6",
+   "sw-r3-7",
+   "sw-r3-8",
+   "sw-r4-1",
+   "sw-r4-2",
+   "sw-r4-3",
+   "sw-r4-4",
+   "sw-r4-5",
+   "sw-r4-6",
+   "sw-r5-1",
+   "sw-r5-2",
+   "sw-r5-3"
+  ],
+  "id": "ko-qf3",
+  "label": "Quarterfinal 3"
+ },
+ "115660540726095115": {
+  "dependsOn": [
+   "sw-r1-1",
+   "sw-r1-2",
+   "sw-r1-3",
+   "sw-r1-4",
+   "sw-r1-5",
+   "sw-r1-6",
+   "sw-r1-7",
+   "sw-r1-8",
+   "sw-r2-1",
+   "sw-r2-2",
+   "sw-r2-3",
+   "sw-r2-4",
+   "sw-r2-5",
+   "sw-r2-6",
+   "sw-r2-7",
+   "sw-r2-8",
+   "sw-r3-1",
+   "sw-r3-2",
+   "sw-r3-3",
+   "sw-r3-4",
+   "sw-r3-5",
+   "sw-r3-6",
+   "sw-r3-7",
+   "sw-r3-8",
+   "sw-r4-1",
+   "sw-r4-2",
+   "sw-r4-3",
+   "sw-r4-4",
+   "sw-r4-5",
+   "sw-r4-6",
+   "sw-r5-1",
+   "sw-r5-2",
+   "sw-r5-3"
+  ],
+  "id": "ko-qf4",
+  "label": "Quarterfinal 4"
+ },
+ "115660540726095121": {
+  "dependsOn": [
+   "ko-qf1",
+   "ko-qf2"
+  ],
+  "id": "ko-sf1",
+  "label": "Semifinal 1"
+ },
+ "115660540726095127": {
+  "dependsOn": [
+   "ko-qf3",
+   "ko-qf4"
+  ],
+  "id": "ko-sf2",
+  "label": "Semifinal 2"
+ },
+ "115660540726095133": {
+  "dependsOn": [
+   "ko-sf1",
+   "ko-sf2"
+  ],
+  "id": "ko-f",
+  "label": "Grand Final"
+ },
+ "115660588583040710": {
+  "dependsOn": [],
+  "id": "pi-2",
+  "label": "Upper Bracket Semifinal 2"
+ },
+ "115660588583171786": {
+  "dependsOn": [],
+  "id": "pi-1",
+  "label": "Upper Bracket Semifinal 1"
+ },
+ "115660588583171790": {
+  "dependsOn": [
+   "pi-1",
+   "pi-2"
+  ],
+  "id": "pi-4",
+  "label": "Upper Bracket Final"
+ },
+ "115660588583171794": {
+  "dependsOn": [
+   "pi-1",
+   "pi-2"
+  ],
+  "id": "pi-3",
+  "label": "Lower Bracket Round 1"
+ },
+ "115660588583171798": {
+  "dependsOn": [
+   "pi-3",
+   "pi-4"
+  ],
+  "id": "pi-5",
+  "label": "Lower Bracket Final"
+ },
+ "116299649498303884": {
+  "dependsOn": [
+   "pi-4",
+   "pi-5"
+  ],
+  "id": "pi-6",
+  "label": "Play-In Final"
+ }
+}

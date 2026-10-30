@@ -1,10 +1,10 @@
-# Keeps feed.json up to date with Caedrel's uploads during Worlds, so the watch schedule sync can read them.
-# YouTube blocks Claude's tools from its feeds, but not GitHub's servers.
+# Keeps the watch schedule's data up to date: Caedrel's uploads (feed.json) and the schedule, results and
+# matched YouTube videos (data.json, built by scripts/build.py). The site reads data.json.
 #
 # GitHub starts scheduled jobs only every few hours on a quiet repo (whatever the cron says), so one run
 # stays alive for ~5.5 hours and checks every 10 minutes. The next scheduled run queues behind it, which
 # gives near-continuous coverage. Free for public repos.
-name: Update feed
+name: Update data
 
 on:
   schedule:
@@ -31,7 +31,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Watch Caedrel's uploads
+      - name: Watch schedule and uploads
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -41,9 +41,10 @@ jobs:
           while :; do
             echo "== $(date -u +%H:%M) =="
             if python3 scripts/feed.py; then fails=0; else fails=$((fails+1)); fi
-            if ! git diff --quiet -- feed.json; then
-              git add feed.json
-              git commit -q -m "Update feed"      # neutral message: no titles in the repo history view
+            python3 scripts/build.py || fails=$((fails+1))
+            for f in feed.json data.json rosters.json; do [ -f "$f" ] && git add "$f"; done
+            if ! git diff --cached --quiet; then
+              git commit -q -m "Update data"      # neutral message: no titles or results in the repo history view
               git pull -q --rebase && git push -q && \
                 gh api -X POST "repos/${{ github.repository }}/pages/builds" >/dev/null || echo "push or Pages request skipped"
             fi
@@ -51,5 +52,5 @@ jobs:
             [ $SECONDS -ge $end ] && break
             sleep 600
           done
-          # Red in the Actions tab (and an email) only when YouTube was unreachable for the last 30+ minutes.
+          # Red in the Actions tab (and an email) only when sources were unreachable for the last 30+ minutes.
           [ $fails -lt 3 ]

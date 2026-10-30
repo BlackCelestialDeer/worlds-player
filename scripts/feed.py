@@ -113,6 +113,8 @@ if page:
 
 # Shown as an annotation on the run, readable without opening the logs.
 print("::notice title=feed sources::" + ", ".join(report) + (f"; errors: {sorted(set(ERRORS))[:3]}" if ERRORS else "") + f"; newest {max((v['published'] for v in fresh.values()), default='-')[:16]}")
+# For build.py: whether this pass reached YouTube (hour precision, so it doesn't force a commit every pass).
+json.dump({"ok": worked, "at": datetime.now(timezone.utc).isoformat()[:13] + ":00:00+00:00"}, open("feed_status.json", "w"))
 if not worked:
     print("All YouTube sources failed; feed.json unchanged")
     sys.exit(1)

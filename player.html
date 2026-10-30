@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="robots" content="noindex">
+<title>Worlds 2026 Player</title>
+<style>
+:root{
+  color-scheme:dark;
+  --void:#010A13; --panel:#0A1428; --line:#1E2D45; --gold:#C8AA6E; --gold-hi:#F0E6D2; --gold-lo:#785A28;
+  --hex:#0AC8B9; --ink:#E7E1D3; --muted:#A09B8C;
+  --f-ui:"Segoe UI Variable Text","Segoe UI",Roboto,system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--void);color:var(--ink);font-family:var(--f-ui);display:grid;grid-template-rows:auto 1fr;
+  padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.brand{font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:13px;color:var(--gold)}
+.brand span{color:var(--muted);font-weight:500;letter-spacing:.08em}
+.hbtns{display:flex;gap:8px}
+.hb{font:600 12px var(--f-ui);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:8px 12px;cursor:pointer;text-decoration:none}
+.hb:hover{border-color:var(--gold)}
+main{display:grid;place-items:center;padding:16px;min-height:0}
+.stage{position:relative;width:min(100%,calc((100vh - 110px) * 16 / 9));aspect-ratio:16/9;max-width:100%;background:#000;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.stage:fullscreen{width:100%;height:100%;border:0;border-radius:0;aspect-ratio:auto}
+#player,#player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.cover{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:16px;text-align:center;padding:24px;
+  background:radial-gradient(600px 300px at 50% 40%,rgba(10,200,185,.10),transparent 70%),#020812;z-index:2}
+.cover[hidden]{display:none}
+.cover h2{margin:0;font-size:clamp(20px,4vw,30px);font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-hi)}
+.cover p{margin:0;color:var(--muted);max-width:44ch;font-size:14px}
+.cbtns{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+.btn{font:600 14px var(--f-ui);padding:12px 18px;border-radius:8px;border:1px solid var(--gold);background:var(--gold);color:var(--void);cursor:pointer;text-decoration:none}
+.btn.ghost{background:transparent;color:var(--gold-hi);border-color:var(--gold-lo)}
+.btn:focus-visible,.hb:focus-visible{outline:2px solid var(--hex);outline-offset:3px}
+.msg{color:var(--muted);text-align:center;padding:24px;max-width:52ch}
+/* Fullscreen only: a transparent layer that hides the idle cursor. */
+.idle{display:none;position:absolute;left:0;right:0;top:0;bottom:64px;z-index:1;cursor:default}
+.stage:fullscreen .idle{display:block}
+.idle.hide{cursor:none;bottom:0}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Worlds 2026 <span id="src">· Player</span></div>
+  <div class="hbtns">
+    <button class="hb" type="button" id="fs">Fullscreen</button>
+    <a class="hb" id="ext" href="#" target="_blank" rel="noopener" hidden>Open on YouTube</a>
+  </div>
+</header>
+<main id="main">
+  <div class="stage" id="stage">
+    <div id="player"></div>
+    <div class="idle" id="idle" title="Click to play or pause, double-click to exit fullscreen"></div>
+    <div class="cover" id="cover-load">
+      <p id="loadmsg">Loading…</p>
+    </div>
+    <div class="cover" id="cover-pause" hidden>
+      <h2>Paused</h2>
+      <p>The player is covered so suggestions stay out of sight.</p>
+      <div class="cbtns"><button class="btn" type="button" id="resume">Resume</button></div>
+    </div>
+    <div class="cover" id="cover-end" hidden>
+      <h2>Video finished</h2>
+      <p>Close this tab and mark the series as watched in your schedule.</p>
+      <div class="cbtns"><button class="btn ghost" type="button" id="again">Watch again</button></div>
+    </div>
+  </div>
+</main>
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  var $=function(id){ return document.getElementById(id); };
+  var pause=$("cover-pause"), end=$("cover-end"), load=$("cover-load"), stage=$("stage"), idle=$("idle");
+  var P=null; // adapter: {play, pause, isPlaying, time, seek}
+
+  function fail(text){ $("main").innerHTML='<p class="msg">'+text+'</p>'; $("fs").hidden=true; }
+
+  // ---------- Fullscreen on our own wrapper, so the covers keep working ----------
+  $("fs").onclick=function(){
+    if(document.fullscreenElement) document.exitFullscreen();
+    else if(stage.requestFullscreen) stage.requestFullscreen().catch(function(){});
+  };
+  if(!document.fullscreenEnabled) $("fs").hidden=true;
+
+  // ---------- Idle cursor (fullscreen): hide 2.5 s after playback starts or the mouse last moved ----------
+  var idleTimer=null, playing=false;
+  function scheduleHide(){ clearTimeout(idleTimer); if(document.fullscreenElement&&playing) idleTimer=setTimeout(function(){ idle.classList.add("hide"); },2500); }
+  function wake(){ idle.classList.remove("hide"); scheduleHide(); }
+  idle.addEventListener("mousemove",wake);
+  document.addEventListener("fullscreenchange",function(){ if(document.fullscreenElement) wake(); else { clearTimeout(idleTimer); idle.classList.remove("hide"); } });
+
+  // One place that reacts to player state, for both YouTube and Twitch.
+  function onState(state){
+    playing=state==="playing";
+    pause.hidden=state!=="paused";
+    end.hidden=state!=="ended";
+    if(playing){ load.hidden=true; scheduleHide(); } else { clearTimeout(idleTimer); idle.classList.remove("hide"); }
+  }
+  function togglePlay(){ if(!P) return; if(P.isPlaying()) P.pause(); else P.play(); }
+  var clickTimer=null;
+  idle.addEventListener("click",function(e){
+    var r=idle.getBoundingClientRect();
+    if(idle.classList.contains("hide")&&e.clientY>r.bottom-64){ wake(); return; }
+    clearTimeout(clickTimer); clickTimer=setTimeout(togglePlay,220);
+  });
+  idle.addEventListener("dblclick",function(){ clearTimeout(clickTimer); if(document.fullscreenElement) document.exitFullscreen(); });
+  document.addEventListener("keydown",function(e){
+    if(!P||e.target.closest("button,a")) return;
+    if(e.key===" "||e.key==="k"){ e.preventDefault(); togglePlay(); }
+    else if(e.key==="f"){ e.preventDefault(); $("fs").click(); }
+    else if(e.key==="ArrowRight"){ e.preventDefault(); P.seek(P.time()+10); }
+    else if(e.key==="ArrowLeft"){ e.preventDefault(); P.seek(Math.max(0,P.time()-10)); }
+  });
+  $("resume").onclick=function(){ if(P) P.play(); };
+  $("again").onclick=function(){ if(P){ P.seek(againAt); P.play(); } };
+  var againAt=0;
+
+  function addScript(src){ var s=document.createElement("script"); s.src=src; document.head.appendChild(s); return s; }
+  function hms(t){ t=Math.max(0,Math.floor(t)); return Math.floor(t/3600)+"h"+Math.floor(t%3600/60)+"m"+(t%60)+"s"; }
+  function store(k,v){ try{ localStorage.setItem(k,String(v)); }catch(e){} }
+  function recall(k){ try{ var v=parseFloat(localStorage.getItem(k)); return isNaN(v)?null:v; }catch(e){ return null; } }
+
+  // ---------- YouTube ----------
+  var yt=q.get("v");
+  if(yt){
+    if(!/^[A-Za-z0-9_-]{11}$/.test(yt)) return fail("No video selected. Open this player from your Worlds schedule.");
+    $("ext").href="https://www.youtube.com/watch?v="+yt; $("ext").textContent="Open on YouTube"; $("ext").hidden=false;
+    window.onYouTubeIframeAPIReady=function(){
+      var yp=new YT.Player("player",{
+        host:"https://www.youtube-nocookie.com", videoId:yt,
+        playerVars:{rel:0,fs:0,modestbranding:1,playsinline:1,iv_load_policy:3,origin:location.origin},
+        events:{
+          onReady:function(){ load.hidden=true; },
+          onStateChange:function(e){
+            onState(e.data===YT.PlayerState.PLAYING?"playing":e.data===YT.PlayerState.PAUSED?"paused":e.data===YT.PlayerState.ENDED?"ended":"other");
+          }}
+      });
+      P={play:function(){yp.playVideo();},pause:function(){yp.pauseVideo();},isPlaying:function(){return yp.getPlayerState()===YT.PlayerState.PLAYING;},
+         time:function(){return yp.getCurrentTime();},seek:function(t){yp.seekTo(t,true);}};
+    };
+    addScript("https://www.youtube.com/iframe_api");
+    return;
+  }
+
+  // ---------- Twitch VOD of a broadcast day ----------
+  // Params: tw=1, day=YYYY-MM-DD, time=HH:MM (broadcast start, Amsterdam). Other params are ignored.
+  if(q.get("tw")!=="1"||!/^\d{4}-\d{2}-\d{2}$/.test(q.get("day")||"")||!/^\d{2}:\d{2}$/.test(q.get("time")||""))
+    return fail("No video selected. Open this player from your Worlds schedule.");
+  $("src").textContent="· Twitch VOD";
+  var broadcast=new Date(q.get("day")+"T"+q.get("time")+":00").getTime();
+  $("loadmsg").textContent="Finding Caedrel's Twitch VOD…";
+
+  // Ask Twitch for Caedrel's recent broadcasts (ids, start times and lengths only, never titles).
+  fetch("https://gql.twitch.tv/gql",{method:"POST",headers:{"Client-Id":"kimne78kx3ncx6brgo4mv6wki5h1ko"},
+    body:JSON.stringify({query:'{user(login:"caedrel"){videos(first:30,type:ARCHIVE,sort:TIME){edges{node{id createdAt lengthSeconds}}}}}'})})
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    var vids=(((d||{}).data||{}).user||{}).videos; vids=vids?vids.edges.map(function(e){ return e.node; }):[];
+    // The VOD that was running at broadcast start; otherwise the first one that started within 3 hours after it.
+    var best=null;
+    vids.forEach(function(v){
+      var c=Date.parse(v.createdAt), e=c+v.lengthSeconds*1000;
+      if(c<=broadcast+15*60e3&&e>=broadcast&&(!best||c>best.c)) best={id:v.id,c:c};
+    });
+    if(!best) vids.forEach(function(v){
+      var c=Date.parse(v.createdAt);
+      if(c>broadcast&&c<broadcast+3*36e5&&(!best||c<best.c)) best={id:v.id,c:c};
+    });
+    if(!best) return fail("Caedrel's Twitch VOD for this broadcast is not available (yet). Try again later or use the YouTube VOD.");
+    startTwitch(best);
+  })
+  .catch(function(){ fail("Could not reach Twitch. Check your connection and try again."); });
+
+  function startTwitch(v){
+    // Where to start: where you last stopped in this VOD (the schedule rolls, so that is where the next series
+    // begins); otherwise 2 minutes before the broadcast start. Never an estimate, so never late.
+    var bStartPos=Math.max(0,(broadcast-2*60e3-v.c)/1000), vodPos=recall("tw:"+v.id);
+    var at=vodPos!=null?vodPos:bStartPos;
+    againAt=bStartPos;
+    $("ext").href="https://www.twitch.tv/videos/"+v.id+"?t="+hms(at); $("ext").textContent="Open on Twitch"; $("ext").hidden=false;
+
+    addScript("https://player.twitch.tv/js/embed/v1.js").onload=function(){
+      var tp=new Twitch.Player("player",{video:v.id,time:hms(at),parent:[location.hostname],autoplay:true,allowfullscreen:false,width:"100%",height:"100%"});
+      tp.addEventListener(Twitch.Player.READY,function(){ load.hidden=true; });
+      tp.addEventListener(Twitch.Player.PLAYING,function(){ onState("playing"); });
+      tp.addEventListener(Twitch.Player.PAUSE,function(){ onState("paused"); });
+      tp.addEventListener(Twitch.Player.ENDED,function(){ onState("ended"); });
+      P={play:function(){tp.play();},pause:function(){tp.pause();},isPlaying:function(){return !tp.getPaused();},
+         time:function(){return tp.getCurrentTime();},seek:function(t){tp.seek(t);}};
+      // Remember the spot in this VOD every few seconds.
+      setInterval(function(){ if(!playing) return; var t=tp.getCurrentTime(); if(t>0) store("tw:"+v.id,t); },5000);
+    };
+  }
+})();
+</script>
+</body>
+</html>
