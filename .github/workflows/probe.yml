@@ -1,4 +1,4 @@
-# One-off check: can GitHub read the Worlds schedule and results from Leaguepedia's public API?
+# One-off check: can GitHub read the Worlds schedule and results without Claude?
 # Prints counts only (no team names or results).
 name: Probe schedule source
 on: workflow_dispatch
@@ -8,18 +8,35 @@ jobs:
     steps:
       - run: |
           python3 - <<'PY'
-          import json, urllib.request, urllib.parse
+          import json, time, urllib.request, urllib.parse
+          def get(url, headers):
+              return json.load(urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=60))
+          # 1) Leaguepedia Cargo API, with backoff for its rate limit
           q = {"action": "cargoquery", "format": "json", "limit": "500", "tables": "MatchSchedule",
-               "fields": "Team1,Team2,DateTime_UTC,BestOf,Winner,Team1Score,Team2Score,Tab,N_MatchInTab,OverviewPage",
+               "fields": "Team1,Team2,DateTime_UTC,BestOf,Winner,Tab,OverviewPage",
                "where": 'OverviewPage LIKE "2026 Season World Championship%"', "order_by": "DateTime_UTC"}
-          url = "https://lol.fandom.com/api.php?" + urllib.parse.urlencode(q)
+          msg = "no answer"
+          for i in range(5):
+              try:
+                  d = get("https://lol.fandom.com/api.php?" + urllib.parse.urlencode(q), {"User-Agent": "worlds-player schedule bot"})
+                  if "error" in d: msg = "error " + d["error"].get("info", "")[:60]; time.sleep(30 * (i + 1)); continue
+                  rows = [x["title"] for x in d.get("cargoquery", [])]
+                  msg = f"rows {len(rows)}, with winner {sum(1 for x in rows if x['Winner'])}, tabs {len(set(x['Tab'] for x in rows))}"
+                  break
+              except Exception as e:
+                  msg = f"failed {e}"; time.sleep(20)
+          print(f"::notice title=leaguepedia (try {i+1})::" + msg)
+          # 2) lolesports public API (the key the lolesports website itself uses)
+          H = {"x-api-key": "0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z"}
           try:
-              r = urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "worlds-player schedule (github.com/BlackCelestialDeer)"}), timeout=60)
-              d = json.load(r); rows = [x["title"] for x in d.get("cargoquery", [])]
-              msg = (f"status {r.status}; rows {len(rows)}; with teams {sum(1 for x in rows if x['Team1'] and x['Team1']!='TBD')}; "
-                     f"with winner {sum(1 for x in rows if x['Winner'])}; pages {sorted(set(x['OverviewPage'] for x in rows))}; "
-                     f"tabs {sorted(set(x['Tab'] for x in rows))[:12]}; first {rows[0]['DateTime UTC'] if rows else '-'}; last {rows[-1]['DateTime UTC'] if rows else '-'}; error {d.get('error',{}).get('info','')[:80]}")
+              lg = get("https://esports-api.lolesports.com/persisted/gw/getLeagues?hl=en-GB", H)["data"]["leagues"]
+              worlds = [l for l in lg if l["slug"] == "worlds"]
+              s = get("https://esports-api.lolesports.com/persisted/gw/getSchedule?hl=en-GB&leagueId=" + worlds[0]["id"], H)["data"]["schedule"]
+              ev = [e for e in s["events"] if e.get("startTime", "") >= "2026-10-01"]
+              msg = (f"events {len(ev)}, completed {sum(1 for e in ev if e['state']=='completed')}, "
+                     f"with teams {sum(1 for e in ev if e.get('match') and all(t['code']!='TBD' for t in e['match']['teams']))}, "
+                     f"blocks {sorted(set(e.get('blockName','') for e in ev))}, older page {bool(s['pages'].get('older'))}")
           except Exception as e:
-              msg = f"failed: {e}"
-          print("::notice title=leaguepedia::" + msg)
+              msg = f"failed {e}"
+          print("::notice title=lolesports::" + msg)
           PY
