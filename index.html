@@ -385,8 +385,10 @@ details.tips li b{color:var(--ink);font-weight:600}
 
   let real=[], watched=[], opened=new Set(), meta=null;
   // tab stays null until you pick one; it then follows the stage of your next series.
+  const standalone=window.navigator.standalone===true||window.matchMedia("(display-mode: standalone)").matches;
   let tab=null, demoOn=false, demoWatched=false, demoOpened=false, selId=null, pendingMark=null, showWatchedDays=false;
   try{ showWatchedDays=localStorage.getItem("w26-showwatched")==="1"; }catch(e){}
+  try{ const s=sessionStorage.getItem("w26-sel"); if(s){ selId=s; sessionStorage.removeItem("w26-sel"); } }catch(e){}
   // A series can be marked once it has been played; during its broadcast also once you opened a source here
   // (the sync only records "played" afterwards).
   const canMark=m=>!!m&&(m.played||(isOpened(m.id)&&Date.now()>=bStart(m)));
@@ -702,6 +704,8 @@ details.tips li b{color:var(--ink);font-weight:600}
     if(t.dataset.jump){ selId=null; tab=null; render(); return; }
     if(t.dataset.vod){
       const id=t.dataset.vod;
+      // Home-screen app: open the player in the same view (a new tab there has no way back).
+      if(standalone&&t.href&&t.href.indexOf(PLAYER)>-1){ e.preventDefault(); try{ sessionStorage.setItem("w26-sel",selId||id); }catch(_){} setTimeout(()=>{ location.href=t.href; },250); }
       if(!isOpened(id)){ if(id===DEMO.id) demoOpened=true; else opened.add(id); setTimeout(()=>{render(); if(id!==DEMO.id){ save(); queueProgress({t:"open",id}); }},0); }
       return;
     }

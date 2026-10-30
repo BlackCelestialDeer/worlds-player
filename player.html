@@ -21,6 +21,8 @@ header{display:flex;justify-content:space-between;align-items:center;gap:12px;pa
 .brand{font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:13px;color:var(--gold)}
 .brand span{color:var(--muted);font-weight:500;letter-spacing:.08em}
 .hbtns{display:flex;gap:8px}
+.lead{display:flex;align-items:center;gap:12px;min-width:0}
+@media (max-width:520px){.brand{display:none}}
 .hb{font:600 12px var(--f-ui);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:8px 12px;cursor:pointer;text-decoration:none}
 .hb:hover{border-color:var(--gold)}
 main{display:grid;place-items:center;padding:16px;min-height:0}
@@ -45,12 +47,19 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
 </head>
 <body>
 <header>
-  <div class="brand">Worlds 2026 <span id="src">· Player</span></div>
+  <div class="lead"><a class="hb" id="back" href="./">‹ Schedule</a><div class="brand">Worlds 2026 <span id="src">· Player</span></div></div>
   <div class="hbtns">
     <button class="hb" type="button" id="fs">Fullscreen</button>
     <a class="hb" id="ext" href="#" target="_blank" rel="noopener" hidden>Open on YouTube</a>
   </div>
 </header>
+<script>
+  // Back to the schedule. In the home-screen app there is no browser back button, so this is the way out.
+  document.getElementById("back").addEventListener("click",function(e){
+    var same=document.referrer&&document.referrer.indexOf(location.origin+location.pathname.replace(/player\.html$/,""))===0;
+    if(same&&history.length>1){ e.preventDefault(); history.back(); }
+  });
+</script>
 <main id="main">
   <div class="stage" id="stage">
     <div id="player"></div>
