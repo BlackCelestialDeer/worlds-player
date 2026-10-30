@@ -220,7 +220,7 @@ def main():
     struct = load("structure.json", {})
     old = load("data.json", {})
     status = old.get("status", {})
-    now = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    now = datetime.now(timezone.utc).isoformat()[:13] + ":00:00+00:00"   # hour precision: no commit every pass
     events = fetch_events()
     if events is None:
         status["schedule"] = {"ok": False, "at": now}
@@ -242,7 +242,7 @@ def main():
         status["feed"] = fs
     # Heartbeat: the hour of the last successful check, so data.json changes (and is committed) at most
     # once an hour when nothing else changes. The page shows it as "data checked".
-    status["checked"] = now[:13] + ":00:00+00:00"
+    status["checked"] = now
     status.pop("changedAt", None)
     out = {"series": sorted(series, key=lambda s: s["order"]), "status": status}
     json.dump(out, open("data.json", "w"), indent=1, ensure_ascii=False)
