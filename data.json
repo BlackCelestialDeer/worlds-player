@@ -1007,9 +1007,9 @@
    "tentative": false,
    "teamA": "LOS",
    "teamB": "TL",
-   "played": false,
-   "winner": "",
-   "score": "",
+   "played": true,
+   "winner": "LOS",
+   "score": "2-1",
    "dependsOn": [
     "sw-r1-1",
     "sw-r1-2",
