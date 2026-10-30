@@ -15,13 +15,14 @@ jobs:
           B = "https://esports-api.lolesports.com/persisted/gw/"
           get = lambda p: json.load(urllib.request.urlopen(urllib.request.Request(B + p, headers=H), timeout=60))
           lid = [l for l in get("getLeagues?hl=en-GB")["data"]["leagues"] if l["slug"] == "worlds"][0]["id"]
-          pages, tok = [], None
-          while True:
-              s = get(f"getSchedule?hl=en-GB&leagueId={lid}" + (f"&pageToken={tok}" if tok else ""))["data"]["schedule"]
-              pages.append(s); tok = s["pages"].get("older")
-              if not tok or len(pages) > 6: break
+          first = get(f"getSchedule?hl=en-GB&leagueId={lid}")["data"]["schedule"]
+          pages = [first]
+          for d in ("older", "newer"):
+              tok = first["pages"].get(d)
+              while tok and len(pages) < 12:
+                  s = get(f"getSchedule?hl=en-GB&leagueId={lid}&pageToken={tok}")["data"]["schedule"]
+                  pages.append(s); tok = s["pages"].get(d)
           json.dump({"leagueId": lid, "pages": pages}, open("schedule.json", "w"), indent=1)
-          codes = sorted({t["slug"] for p in pages for e in p["events"] if e.get("match") for t in e["match"]["teams"] if e.get("startTime","") >= "2026-10-01" and t.get("code") != "TBD"} - {None})
           teams = {}
           for p in pages:
               for e in p["events"]:
