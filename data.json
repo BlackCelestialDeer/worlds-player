@@ -1050,9 +1050,9 @@
    "tentative": false,
    "teamA": "G2",
    "teamB": "HLE",
-   "played": false,
-   "winner": "",
-   "score": "",
+   "played": true,
+   "winner": "HLE",
+   "score": "0-2",
    "dependsOn": [
     "sw-r1-1",
     "sw-r1-2",
