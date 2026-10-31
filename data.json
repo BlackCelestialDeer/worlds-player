@@ -1142,9 +1142,9 @@
    "tentative": false,
    "teamA": "LYON",
    "teamB": "LOS",
-   "played": false,
-   "winner": "",
-   "score": "",
+   "played": true,
+   "winner": "LYON",
+   "score": "2-1",
    "dependsOn": [
     "sw-r1-1",
     "sw-r1-2",
