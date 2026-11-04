@@ -5,147 +5,178 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="robots" content="noindex">
+<meta name="theme-color" content="#000000">
 <title>Worlds 2026 Player</title>
 <style>
+/* Theater player: black page, the video as large as the screen allows, nothing else in sight.
+   A back button (top left) and a small control pill (bottom) appear when you move near the bottom edge,
+   tap, or pause, and fade out again while the video plays. */
 :root{
   color-scheme:dark;
-  --void:#010A13; --panel:#0A1428; --line:#1E2D45; --gold:#C8AA6E; --gold-hi:#F0E6D2; --gold-lo:#785A28;
-  --hex:#0AC8B9; --ink:#E7E1D3; --muted:#A09B8C;
-  --f-ui:"Segoe UI Variable Text","Segoe UI",Roboto,system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --gold:#C8AA6E; --gold-hi:#F0E6D2; --gold-lo:#785A28; --hex:#0AC8B9; --ink:#ECE7DB; --muted:#A09B8C;
+  --glass:rgba(16,20,28,.72); --glass-line:rgba(255,255,255,.10);
+  --f-ui:-apple-system,BlinkMacSystemFont,"Segoe UI Variable Text","Segoe UI",Roboto,system-ui,sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
 }
 *{box-sizing:border-box}
-html,body{height:100%;margin:0}
-body{background:var(--void);color:var(--ink);font-family:var(--f-ui);display:grid;grid-template-rows:auto 1fr;
-  padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
-header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
-.brand{font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:13px;color:var(--gold)}
-.brand span{color:var(--muted);font-weight:500;letter-spacing:.08em}
-.hbtns{display:flex;gap:8px}
-.lead{display:flex;align-items:center;gap:12px;min-width:0}
-@media (max-width:520px){.brand{display:none}}
-.hb{font:600 12px var(--f-ui);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:8px 12px;cursor:pointer;text-decoration:none}
-.hb:hover{border-color:var(--gold)}
-main{display:grid;place-items:center;padding:16px;min-height:0}
-.wrap{display:grid;gap:8px;width:min(100%,calc((100vh - 170px) * 16 / 9))}
-.stage{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.wrap:fullscreen{width:100%;height:100%;display:flex;flex-direction:column;gap:0;background:#000}
-.wrap:fullscreen .stage{flex:1;border:0;border-radius:0;aspect-ratio:auto}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0;background:#000;overflow:hidden}
+body{color:var(--ink);font-family:var(--f-ui);-webkit-font-smoothing:antialiased}
+main{position:fixed;inset:0;display:grid;place-items:center}
+.stage{position:relative;width:min(100vw,calc(100dvh * 16 / 9));aspect-ratio:16/9;background:#000}
 #player,#player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-.cover{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:16px;text-align:center;padding:24px;
-  background:radial-gradient(600px 300px at 50% 40%,rgba(10,200,185,.10),transparent 70%),#020812;z-index:2}
+/* Transparent layer over the YouTube video: catches clicks and hovers so YouTube never shows its own
+   overlays (title, suggestions). Not used for Twitch, which refuses to play when anything covers it. */
+.layer{position:absolute;inset:0;z-index:1;cursor:pointer;-webkit-tap-highlight-color:transparent}
+body.tw .layer{display:none}
+body.calm .layer{cursor:none}
+
+/* Floating chrome */
+.ui{position:fixed;z-index:5;opacity:0;pointer-events:none;transition:opacity .25s var(--ease),transform .25s var(--ease)}
+body.show .ui{opacity:1;pointer-events:auto}
+.back{top:max(12px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left));display:inline-flex;align-items:center;gap:6px;
+  height:36px;padding:0 14px 0 10px;border-radius:999px;background:var(--glass);border:1px solid var(--glass-line);
+  -webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%);
+  color:var(--ink);font:600 13px var(--f-ui);text-decoration:none}
+.back svg{flex:none}
+.ctl{left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translate(-50%,6px);display:flex;align-items:center;gap:2px;padding:4px;
+  border-radius:999px;background:var(--glass);border:1px solid var(--glass-line);
+  -webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%)}
+body.show .ctl{transform:translate(-50%,0)}
+body.tw .ctl{display:none}
+/* Twitch: nothing may sit on its player, so the video starts below a slim bar that holds the back button,
+   which then stays visible (taps inside Twitch's player don't reach this page to bring it back). */
+body.tw main{top:calc(56px + env(safe-area-inset-top))}
+body.tw .stage{width:min(100vw,calc((100dvh - 56px - env(safe-area-inset-top)) * 16 / 9))}
+body.tw .back{opacity:1;pointer-events:auto}
+.ctl button{display:grid;place-items:center;min-width:40px;height:36px;padding:0 8px;border:0;border-radius:999px;background:transparent;
+  color:var(--ink);font:600 12px var(--f-ui);font-variant-numeric:tabular-nums;cursor:pointer;transition:background .15s var(--ease)}
+.ctl button:hover{background:rgba(255,255,255,.10)}
+.ctl .pp{width:44px;height:44px;margin:0 4px;background:var(--gold);color:#10131A}
+.ctl .pp:hover{background:var(--gold-hi)}
+.ctl .sep{width:1px;height:20px;background:var(--glass-line);margin:0 4px}
+.ctl button:focus-visible,.back:focus-visible{outline:2px solid var(--hex);outline-offset:2px}
+@media (max-width:420px){.ctl button{min-width:34px;padding:0 6px}}
+
+/* Covers: loading, and end of a YouTube video (hides its suggestion grid) */
+.cover{position:absolute;inset:0;z-index:2;display:grid;place-items:center;align-content:center;gap:14px;text-align:center;padding:24px;background:#000}
 .cover[hidden]{display:none}
-/* Twitch forbids anything on top of its player (it then refuses to play), so Twitch runs plain with its own
-   controls: no layer, no covers, no control bar of ours. */
-.wrap.is-tw .idle,.wrap.is-tw .ctl{display:none}
-.cover h2{margin:0;font-size:clamp(20px,4vw,30px);font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-hi)}
-.cover p{margin:0;color:var(--muted);max-width:44ch;font-size:14px}
-.cbtns{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
-.btn{font:600 14px var(--f-ui);padding:12px 18px;border-radius:8px;border:1px solid var(--gold);background:var(--gold);color:var(--void);cursor:pointer;text-decoration:none}
-.btn.ghost{background:transparent;color:var(--gold-hi);border-color:var(--gold-lo)}
-.btn:focus-visible,.hb:focus-visible{outline:2px solid var(--hex);outline-offset:3px}
+.cover h2{margin:0;font-size:clamp(18px,3vw,26px);font-weight:700;color:var(--gold-hi)}
+.cover p{margin:0;color:var(--muted);font-size:14px;max-width:44ch}
+.btn{font:600 14px var(--f-ui);padding:10px 18px;border-radius:999px;border:1px solid var(--gold-lo);background:transparent;color:var(--gold-hi);cursor:pointer}
 .msg{color:var(--muted);text-align:center;padding:24px;max-width:52ch}
-/* Both players run without their own controls (they show the timeline and length, which spoil).
-   A transparent layer over the video catches every click, tap and hover, so the embedded player never
-   shows its own bars or overlays; playback is controlled from our bar below the video, which shows no time. */
-.ctl{display:flex;align-items:center;justify-content:center;gap:6px;padding:4px 0}
-.wrap:fullscreen .ctl{padding:8px 0}
-.ctl button{font:600 12px var(--f-ui);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;height:36px;min-width:56px;padding:0 10px;cursor:pointer}
-.ctl button:hover{border-color:var(--gold)}
-.ctl button:focus-visible{outline:2px solid var(--hex);outline-offset:2px}
-.ctl .pp{min-width:76px;border-color:var(--gold-lo);color:var(--gold-hi)}
-@media (max-width:420px){.ctl{gap:4px}.ctl button{min-width:0;padding:0 9px}}
-.idle{position:absolute;inset:0;z-index:1;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.idle.hide{cursor:none}
 </style>
 </head>
-<body>
-<header>
-  <div class="lead"><a class="hb" id="back" href="./">‹ Schedule</a><div class="brand">Worlds 2026 <span id="src">· Player</span></div></div>
-  <div class="hbtns">
-    <button class="hb" type="button" id="fs">Fullscreen</button>
-    <a class="hb" id="ext" href="#" target="_blank" rel="noopener" hidden>Open on YouTube</a>
-  </div>
-</header>
-<script>
-  // Back to the schedule. In the home-screen app there is no browser back button, so this is the way out.
-  document.getElementById("back").addEventListener("click",function(e){
-    var same=document.referrer&&document.referrer.indexOf(location.origin+location.pathname.replace(/player\.html$/,""))===0;
-    if(same&&history.length>1){ e.preventDefault(); history.back(); }
-  });
-</script>
+<body class="show">
 <main id="main">
-  <div class="wrap" id="wrap">
   <div class="stage" id="stage">
     <div id="player"></div>
-    <div class="idle" id="idle" title="Click to play or pause"></div>
-    <div class="cover" id="cover-load">
-      <p id="loadmsg">Loading…</p>
-    </div>
+    <div class="layer" id="layer" aria-hidden="true"></div>
+    <div class="cover" id="cover-load"><p id="loadmsg">Loading…</p></div>
     <div class="cover" id="cover-end" hidden>
       <h2>Video finished</h2>
       <p>Go back to the schedule and mark the series as watched.</p>
-      <div class="cbtns"><button class="btn ghost" type="button" id="again">Watch again</button></div>
-    </div>
-  </div>
-    <div class="ctl" role="toolbar" aria-label="Playback">
-      <button type="button" data-skip="-60">−1m</button>
-      <button type="button" data-skip="-10">−10s</button>
-      <button type="button" class="pp" id="pp" aria-label="Play or pause">Play</button>
-      <button type="button" data-skip="10">+10s</button>
-      <button type="button" data-skip="60">+1m</button>
-      <button type="button" id="mute" aria-label="Mute or unmute">Mute</button>
+      <button class="btn" type="button" id="again">Watch again</button>
     </div>
   </div>
 </main>
+
+<a class="ui back" id="back" href="./" aria-label="Back to the schedule">
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Schedule
+</a>
+
+<div class="ui ctl" id="ctl" role="toolbar" aria-label="Playback">
+  <button type="button" data-skip="-60" aria-label="Back 1 minute">−1m</button>
+  <button type="button" data-skip="-10" aria-label="Back 10 seconds">−10</button>
+  <button type="button" class="pp" id="pp" aria-label="Play">
+    <svg id="ic-play" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" fill="currentColor"/></svg>
+    <svg id="ic-pause" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" hidden><path d="M4 2.5h2.8v11H4zM9.2 2.5H12v11H9.2z" fill="currentColor"/></svg>
+  </button>
+  <button type="button" data-skip="10" aria-label="Forward 10 seconds">+10</button>
+  <button type="button" data-skip="60" aria-label="Forward 1 minute">+1m</button>
+  <span class="sep" aria-hidden="true"></span>
+  <button type="button" id="mute" aria-label="Mute">
+    <svg id="ic-vol" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M3 7h3l4-3v10l-4-3H3z" fill="currentColor"/><path d="M12.5 6.5a3.5 3.5 0 010 5M14.5 4.5a6.4 6.4 0 010 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <svg id="ic-mute" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true" hidden><path d="M3 7h3l4-3v10l-4-3H3z" fill="currentColor"/><path d="M12.5 7l4 4M16.5 7l-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+  </button>
+  <button type="button" id="fs" aria-label="Fullscreen">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M3 7V3h4M11 3h4v4M15 11v4h-4M7 15H3v-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+</div>
+
 <script>
 (function(){
   var q=new URLSearchParams(location.search);
   var $=function(id){ return document.getElementById(id); };
-  var end=$("cover-end"), load=$("cover-load"), stage=$("stage"), wrap=$("wrap"), idle=$("idle");
-  var P=null; // adapter: {play, pause, time, seek, muted, setMuted}
+  var body=document.body, end=$("cover-end"), load=$("cover-load"), layer=$("layer");
+  var P=null;            // adapter: {play, pause, time, seek, muted, setMuted}
+  var playing=false;
 
-  function fail(text){ $("main").innerHTML='<p class="msg">'+text+'</p>'; $("fs").hidden=true; }
+  // SVG elements have no .hidden property, so toggle the attribute.
+  function vis(el,on){ if(on) el.removeAttribute("hidden"); else el.setAttribute("hidden",""); }
+  function fail(text){ $("main").innerHTML='<p class="msg">'+text+'</p>'; body.classList.add("tw"); showUI(true); }
 
-  // ---------- Fullscreen on our own wrapper, so the layer and our controls stay in place ----------
-  $("fs").onclick=function(){
-    if(document.fullscreenElement) document.exitFullscreen();
-    else if(wrap.requestFullscreen) wrap.requestFullscreen().catch(function(){});
-  };
-  if(!document.fullscreenEnabled) $("fs").hidden=true;
+  // Back to the schedule (in the home-screen app there is no browser back button).
+  $("back").addEventListener("click",function(e){
+    var base=location.origin+location.pathname.replace(/player\.html$/,"");
+    if(document.referrer&&document.referrer.indexOf(base)===0&&history.length>1){ e.preventDefault(); history.back(); }
+  });
 
-  // ---------- Idle cursor (fullscreen): hide 2.5 s after playback starts or the mouse last moved ----------
-  var idleTimer=null, playing=false;
-  function scheduleHide(){ clearTimeout(idleTimer); if(document.fullscreenElement&&playing) idleTimer=setTimeout(function(){ idle.classList.add("hide"); },2500); }
-  function wake(){ idle.classList.remove("hide"); scheduleHide(); }
-  idle.addEventListener("mousemove",wake);
-  document.addEventListener("fullscreenchange",function(){ if(document.fullscreenElement) wake(); else { clearTimeout(idleTimer); idle.classList.remove("hide"); } });
+  // ---------- Showing and hiding the controls ----------
+  // Visible while paused, and for 2.5 s after you move near the top or bottom edge, tap, or press a key.
+  var uiTimer=null, overUI=false;
+  function showUI(stay){
+    body.classList.add("show"); body.classList.remove("calm"); clearTimeout(uiTimer);
+    if(!stay&&playing) uiTimer=setTimeout(function(){ if(!overUI&&playing){ body.classList.remove("show"); body.classList.add("calm"); } },2500);
+  }
+  document.addEventListener("mousemove",function(e){
+    if(e.clientY>window.innerHeight-120||e.clientY<80) showUI(); else body.classList.remove("calm");
+  });
+  ["ctl","back"].forEach(function(id){
+    $(id).addEventListener("mouseenter",function(){ overUI=true; showUI(); });
+    $(id).addEventListener("mouseleave",function(){ overUI=false; showUI(); });
+  });
+  document.addEventListener("touchstart",function(){ showUI(); },{passive:true});
 
-  // One place that reacts to player state, for both YouTube and Twitch.
+  // ---------- Player state ----------
   function onState(state){
     playing=state==="playing";
-    $("pp").textContent=playing?"Pause":"Play";
     end.hidden=state!=="ended";
-    if(playing){ load.hidden=true; scheduleHide(); } else { clearTimeout(idleTimer); idle.classList.remove("hide"); }
+    if(playing) load.hidden=true;
+    vis($("ic-play"),!playing); vis($("ic-pause"),playing); $("pp").setAttribute("aria-label",playing?"Pause":"Play");
+    showUI(!playing);
   }
-  // Uses the last state the player reported: asking the embed directly is unreliable (Twitch on iOS).
+  // Uses the last state the player reported (asking the embed directly is unreliable).
   function togglePlay(){ if(!P) return; if(playing) P.pause(); else P.play(); }
-  var clickTimer=null;
-  idle.addEventListener("click",function(){ wake(); clearTimeout(clickTimer); clickTimer=setTimeout(togglePlay,220); });
-  idle.addEventListener("dblclick",function(){ clearTimeout(clickTimer); if(document.fullscreenElement) document.exitFullscreen(); });
+  function skip(s){ if(P) P.seek(Math.max(0,P.time()+s)); showUI(); }
+  function syncMute(){ if(!P) return; var m=P.muted(); vis($("ic-vol"),!m); vis($("ic-mute"),m); $("mute").setAttribute("aria-label",m?"Unmute":"Mute"); }
+
+  layer.addEventListener("click",function(){ togglePlay(); showUI(); });
+  layer.addEventListener("dblclick",toggleFS);
+  $("pp").onclick=function(){ togglePlay(); };
+  $("mute").onclick=function(){ if(!P) return; P.setMuted(!P.muted()); setTimeout(syncMute,150); showUI(); };
+  document.querySelectorAll("#ctl [data-skip]").forEach(function(b){ b.onclick=function(){ skip(Number(b.dataset.skip)); }; });
   document.addEventListener("keydown",function(e){
     if(!P||e.target.closest("button,a")) return;
     if(e.key===" "||e.key==="k"){ e.preventDefault(); togglePlay(); }
-    else if(e.key==="f"){ e.preventDefault(); $("fs").click(); }
-    else if(e.key==="ArrowRight"){ e.preventDefault(); P.seek(P.time()+10); }
-    else if(e.key==="ArrowLeft"){ e.preventDefault(); P.seek(Math.max(0,P.time()-10)); }
+    else if(e.key==="f"){ e.preventDefault(); toggleFS(); }
+    else if(e.key==="m"){ e.preventDefault(); $("mute").click(); }
+    else if(e.key==="ArrowRight"){ e.preventDefault(); skip(10); }
+    else if(e.key==="ArrowLeft"){ e.preventDefault(); skip(-10); }
+    showUI();
   });
+
+  // Fullscreen on the whole page, so our controls stay available.
+  function toggleFS(){
+    var d=document, el=d.documentElement;
+    if(d.fullscreenElement||d.webkitFullscreenElement){ (d.exitFullscreen||d.webkitExitFullscreen).call(d); return; }
+    if(el.requestFullscreen) el.requestFullscreen().catch(function(){});
+    else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  }
+  $("fs").onclick=toggleFS;
+  if(!(document.fullscreenEnabled||document.webkitFullscreenEnabled)) $("fs").hidden=true;   // e.g. iPhone: the app is already full screen
+
   $("again").onclick=function(){ if(P){ P.seek(againAt); P.play(); } };
-  // Our control bar (both players).
-  $("pp").onclick=togglePlay;
-  $("mute").onclick=function(){ if(!P) return; P.setMuted(!P.muted()); setTimeout(function(){ $("mute").textContent=P.muted()?"Unmute":"Mute"; },150); };
-  document.querySelectorAll(".ctl [data-skip]").forEach(function(b){
-    b.onclick=function(){ if(P) P.seek(Math.max(0,P.time()+Number(b.dataset.skip))); };
-  });
   var againAt=0;
 
   function addScript(src){ var s=document.createElement("script"); s.src=src; document.head.appendChild(s); return s; }
@@ -153,18 +184,17 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
   function store(k,v){ try{ localStorage.setItem(k,String(v)); }catch(e){} }
   function recall(k){ try{ var v=parseFloat(localStorage.getItem(k)); return isNaN(v)?null:v; }catch(e){ return null; } }
 
-  // ---------- YouTube ----------
+  // ---------- YouTube: no native controls (no timeline or length), our pill instead ----------
   var yt=q.get("v");
   if(yt){
     if(!/^[A-Za-z0-9_-]{11}$/.test(yt)) return fail("No video selected. Open this player from your Worlds schedule.");
-    $("ext").href="https://www.youtube.com/watch?v="+yt; $("ext").textContent="Open on YouTube"; $("ext").hidden=false;
     window.onYouTubeIframeAPIReady=function(){
       var yp=new YT.Player("player",{
         // youtube.com (not youtube-nocookie) so a signed-in Premium account is recognised: no ads.
         host:"https://www.youtube.com", videoId:yt,
         playerVars:{controls:0,disablekb:1,rel:0,fs:0,modestbranding:1,playsinline:1,iv_load_policy:3,origin:location.origin},
         events:{
-          onReady:function(){ load.hidden=true; },
+          onReady:function(){ load.hidden=true; syncMute(); },
           onStateChange:function(e){
             onState(e.data===YT.PlayerState.PLAYING?"playing":e.data===YT.PlayerState.PAUSED?"paused":e.data===YT.PlayerState.ENDED?"ended":"other");
           }}
@@ -178,10 +208,11 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
   }
 
   // ---------- Twitch VOD of a broadcast day ----------
+  // Twitch refuses to play when anything covers its player, so it runs plain with its own controls.
   // Params: tw=1, day=YYYY-MM-DD, time=HH:MM (broadcast start, Amsterdam). Other params are ignored.
+  body.classList.add("tw");
   if(q.get("tw")!=="1"||!/^\d{4}-\d{2}-\d{2}$/.test(q.get("day")||"")||!/^\d{2}:\d{2}$/.test(q.get("time")||""))
     return fail("No video selected. Open this player from your Worlds schedule.");
-  $("src").textContent="· Twitch VOD";
   var broadcast=new Date(q.get("day")+"T"+q.get("time")+":00").getTime();
   $("loadmsg").textContent="Finding Caedrel's Twitch VOD…";
 
@@ -212,11 +243,9 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
     var bStartPos=Math.max(0,(broadcast-2*60e3-v.c)/1000), vodPos=recall("tw:"+v.id);
     var at=vodPos!=null?vodPos:bStartPos;
     againAt=bStartPos;
-    $("ext").href="https://www.twitch.tv/videos/"+v.id+"?t="+hms(at); $("ext").textContent="Open on Twitch"; $("ext").hidden=false;
-
     addScript("https://player.twitch.tv/js/embed/v1.js").onload=function(){
-      load.hidden=true; wrap.classList.add("is-tw");
-      var tp=new Twitch.Player("player",{video:v.id,time:hms(at),parent:[location.hostname],autoplay:false,allowfullscreen:false,width:"100%",height:"100%"});
+      load.hidden=true;
+      var tp=new Twitch.Player("player",{video:v.id,time:hms(at),parent:[location.hostname],autoplay:false,allowfullscreen:true,width:"100%",height:"100%"});
       tp.addEventListener(Twitch.Player.PLAYING,function(){ onState("playing"); });
       tp.addEventListener(Twitch.Player.PAUSE,function(){ onState("paused"); });
       tp.addEventListener(Twitch.Player.ENDED,function(){ onState("ended"); });
