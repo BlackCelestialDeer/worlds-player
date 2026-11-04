@@ -26,8 +26,7 @@ header{display:flex;justify-content:space-between;align-items:center;gap:12px;pa
 .hb{font:600 12px var(--f-ui);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:8px 12px;cursor:pointer;text-decoration:none}
 .hb:hover{border-color:var(--gold)}
 main{display:grid;place-items:center;padding:16px;min-height:0}
-.wrap{display:grid;gap:8px;width:min(100%,calc((100vh - 110px) * 16 / 9))}
-.wrap.is-tw{width:min(100%,calc((100vh - 170px) * 16 / 9))}
+.wrap{display:grid;gap:8px;width:min(100%,calc((100vh - 170px) * 16 / 9))}
 .stage{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .wrap:fullscreen{width:100%;height:100%;display:flex;flex-direction:column;gap:0;background:#000}
 .wrap:fullscreen .stage{flex:1;border:0;border-radius:0;aspect-ratio:auto}
@@ -42,22 +41,18 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
 .btn.ghost{background:transparent;color:var(--gold-hi);border-color:var(--gold-lo)}
 .btn:focus-visible,.hb:focus-visible{outline:2px solid var(--hex);outline-offset:3px}
 .msg{color:var(--muted);text-align:center;padding:24px;max-width:52ch}
-/* Twitch: the embed is made taller than the visible frame, so its own top bar (title) and control bar
-   (timeline, which spoils) fall outside the clipped area; the video itself stays fully visible.
-   Our own controls sit below the video and show no time or length. */
-.wrap.is-tw #player{top:-64px;bottom:-64px;height:auto}
-.tw-bar{display:none;align-items:center;justify-content:center;gap:6px;padding:4px 0}
-.wrap.is-tw .tw-bar{display:flex}
-.wrap:fullscreen .tw-bar{padding:8px 0}
-.tw-bar button{font:600 12px var(--f-ui);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;height:36px;min-width:56px;padding:0 10px;cursor:pointer}
-.tw-bar button:hover{border-color:var(--gold)}
-.tw-bar button:focus-visible{outline:2px solid var(--hex);outline-offset:2px}
-.tw-bar .pp{min-width:76px;border-color:var(--gold-lo);color:var(--gold-hi)}
-@media (max-width:420px){.tw-bar{gap:4px}.tw-bar button{min-width:0;padding:0 9px}}
-/* Fullscreen only: a transparent layer that hides the idle cursor. */
-.idle{display:none;position:absolute;left:0;right:0;top:0;bottom:64px;z-index:1;cursor:default}
-.wrap:fullscreen .idle{display:block}
-.idle.hide{cursor:none;bottom:0}
+/* Both players run without their own controls (they show the timeline and length, which spoil).
+   A transparent layer over the video catches every click, tap and hover, so the embedded player never
+   shows its own bars or overlays; playback is controlled from our bar below the video, which shows no time. */
+.ctl{display:flex;align-items:center;justify-content:center;gap:6px;padding:4px 0}
+.wrap:fullscreen .ctl{padding:8px 0}
+.ctl button{font:600 12px var(--f-ui);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;height:36px;min-width:56px;padding:0 10px;cursor:pointer}
+.ctl button:hover{border-color:var(--gold)}
+.ctl button:focus-visible{outline:2px solid var(--hex);outline-offset:2px}
+.ctl .pp{min-width:76px;border-color:var(--gold-lo);color:var(--gold-hi)}
+@media (max-width:420px){.ctl{gap:4px}.ctl button{min-width:0;padding:0 9px}}
+.idle{position:absolute;inset:0;z-index:1;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.idle.hide{cursor:none}
 </style>
 </head>
 <body>
@@ -79,7 +74,7 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
   <div class="wrap" id="wrap">
   <div class="stage" id="stage">
     <div id="player"></div>
-    <div class="idle" id="idle" title="Click to play or pause, double-click to exit fullscreen"></div>
+    <div class="idle" id="idle" title="Click to play or pause"></div>
     <div class="cover" id="cover-load">
       <p id="loadmsg">Loading…</p>
     </div>
@@ -89,13 +84,13 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
       <div class="cbtns"><button class="btn ghost" type="button" id="again">Watch again</button></div>
     </div>
   </div>
-    <div class="tw-bar" role="toolbar" aria-label="Playback">
+    <div class="ctl" role="toolbar" aria-label="Playback">
       <button type="button" data-skip="-60">−1m</button>
       <button type="button" data-skip="-10">−10s</button>
-      <button type="button" class="pp" id="twplay" aria-label="Play or pause">Pause</button>
+      <button type="button" class="pp" id="pp" aria-label="Play or pause">Play</button>
       <button type="button" data-skip="10">+10s</button>
       <button type="button" data-skip="60">+1m</button>
-      <button type="button" id="twmute" aria-label="Mute or unmute">Mute</button>
+      <button type="button" id="mute" aria-label="Mute or unmute">Mute</button>
     </div>
   </div>
 </main>
@@ -104,11 +99,11 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
   var q=new URLSearchParams(location.search);
   var $=function(id){ return document.getElementById(id); };
   var end=$("cover-end"), load=$("cover-load"), stage=$("stage"), wrap=$("wrap"), idle=$("idle");
-  var P=null; // adapter: {play, pause, isPlaying, time, seek}
+  var P=null; // adapter: {play, pause, time, seek, muted, setMuted}
 
   function fail(text){ $("main").innerHTML='<p class="msg">'+text+'</p>'; $("fs").hidden=true; }
 
-  // ---------- Fullscreen on our own wrapper, so the covers keep working ----------
+  // ---------- Fullscreen on our own wrapper, so the layer and our controls stay in place ----------
   $("fs").onclick=function(){
     if(document.fullscreenElement) document.exitFullscreen();
     else if(wrap.requestFullscreen) wrap.requestFullscreen().catch(function(){});
@@ -125,16 +120,14 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
   // One place that reacts to player state, for both YouTube and Twitch.
   function onState(state){
     playing=state==="playing";
+    $("pp").textContent=playing?"Pause":"Play";
     end.hidden=state!=="ended";
     if(playing){ load.hidden=true; scheduleHide(); } else { clearTimeout(idleTimer); idle.classList.remove("hide"); }
   }
-  function togglePlay(){ if(!P) return; if(P.isPlaying()) P.pause(); else P.play(); }
+  // Uses the last state the player reported: asking the embed directly is unreliable (Twitch on iOS).
+  function togglePlay(){ if(!P) return; if(playing) P.pause(); else P.play(); }
   var clickTimer=null;
-  idle.addEventListener("click",function(e){
-    var r=idle.getBoundingClientRect();
-    if(idle.classList.contains("hide")&&e.clientY>r.bottom-64){ wake(); return; }
-    clearTimeout(clickTimer); clickTimer=setTimeout(togglePlay,220);
-  });
+  idle.addEventListener("click",function(){ wake(); clearTimeout(clickTimer); clickTimer=setTimeout(togglePlay,220); });
   idle.addEventListener("dblclick",function(){ clearTimeout(clickTimer); if(document.fullscreenElement) document.exitFullscreen(); });
   document.addEventListener("keydown",function(e){
     if(!P||e.target.closest("button,a")) return;
@@ -144,6 +137,12 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
     else if(e.key==="ArrowLeft"){ e.preventDefault(); P.seek(Math.max(0,P.time()-10)); }
   });
   $("again").onclick=function(){ if(P){ P.seek(againAt); P.play(); } };
+  // Our control bar (both players).
+  $("pp").onclick=togglePlay;
+  $("mute").onclick=function(){ if(!P) return; P.setMuted(!P.muted()); setTimeout(function(){ $("mute").textContent=P.muted()?"Unmute":"Mute"; },150); };
+  document.querySelectorAll(".ctl [data-skip]").forEach(function(b){
+    b.onclick=function(){ if(P) P.seek(Math.max(0,P.time()+Number(b.dataset.skip))); };
+  });
   var againAt=0;
 
   function addScript(src){ var s=document.createElement("script"); s.src=src; document.head.appendChild(s); return s; }
@@ -159,15 +158,16 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
     window.onYouTubeIframeAPIReady=function(){
       var yp=new YT.Player("player",{
         host:"https://www.youtube-nocookie.com", videoId:yt,
-        playerVars:{rel:0,fs:0,modestbranding:1,playsinline:1,iv_load_policy:3,origin:location.origin},
+        playerVars:{controls:0,disablekb:1,rel:0,fs:0,modestbranding:1,playsinline:1,iv_load_policy:3,origin:location.origin},
         events:{
           onReady:function(){ load.hidden=true; },
           onStateChange:function(e){
             onState(e.data===YT.PlayerState.PLAYING?"playing":e.data===YT.PlayerState.PAUSED?"paused":e.data===YT.PlayerState.ENDED?"ended":"other");
           }}
       });
-      P={play:function(){yp.playVideo();},pause:function(){yp.pauseVideo();},isPlaying:function(){return yp.getPlayerState()===YT.PlayerState.PLAYING;},
-         time:function(){return yp.getCurrentTime();},seek:function(t){yp.seekTo(t,true);}};
+      P={play:function(){yp.playVideo();},pause:function(){yp.pauseVideo();},
+         time:function(){return yp.getCurrentTime();},seek:function(t){yp.seekTo(t,true);},
+         muted:function(){return yp.isMuted();},setMuted:function(m){ if(m) yp.mute(); else yp.unMute(); }};
     };
     addScript("https://www.youtube.com/iframe_api");
     return;
@@ -216,17 +216,9 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
       tp.addEventListener(Twitch.Player.PLAYING,function(){ onState("playing"); });
       tp.addEventListener(Twitch.Player.PAUSE,function(){ onState("paused"); });
       tp.addEventListener(Twitch.Player.ENDED,function(){ onState("ended"); });
-      P={play:function(){tp.play();},pause:function(){tp.pause();},isPlaying:function(){return !tp.getPaused();},
-         time:function(){return tp.getCurrentTime();},seek:function(t){tp.seek(t);}};
-      wrap.classList.add("is-tw");
-      var pp=$("twplay"), mute=$("twmute");
-      var sync=function(){ pp.textContent=tp.getPaused()?"Play":"Pause"; mute.textContent=tp.getMuted()?"Unmute":"Mute"; };
-      [Twitch.Player.PLAYING,Twitch.Player.PAUSE,Twitch.Player.READY].forEach(function(ev){ tp.addEventListener(ev,sync); });
-      pp.onclick=function(){ togglePlay(); setTimeout(sync,150); };
-      mute.onclick=function(){ tp.setMuted(!tp.getMuted()); setTimeout(sync,100); };
-      document.querySelectorAll(".tw-bar [data-skip]").forEach(function(b){
-        b.onclick=function(){ P.seek(Math.max(0,P.time()+Number(b.dataset.skip))); };
-      });
+      P={play:function(){tp.play();},pause:function(){tp.pause();},
+         time:function(){return tp.getCurrentTime();},seek:function(t){tp.seek(t);},
+         muted:function(){return tp.getMuted();},setMuted:function(m){tp.setMuted(m);}};
       // Remember the spot in this VOD every few seconds.
       setInterval(function(){ if(!playing) return; var t=tp.getCurrentTime(); if(t>0) store("tw:"+v.id,t); },5000);
     };

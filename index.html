@@ -135,6 +135,8 @@ h1{margin:0;font-family:var(--f-head);font-weight:800;font-size:clamp(34px,7vw,5
 .btn.yt:not(.off) small{color:var(--gold)}
 .btn.twitch{color:#EDE4FF;border-color:rgba(169,112,255,.55);background:linear-gradient(180deg,rgba(169,112,255,.16),rgba(169,112,255,.05))}
 .btn.twitch:not(.off) small{color:var(--tw-hi)}
+.btn.twitch.alt{background:transparent;border-color:rgba(169,112,255,.3);color:var(--muted)}
+.btn.twitch.alt:not(.off) small{color:var(--muted)}
 .btn.twitch:hover:not([aria-disabled="true"]){border-color:var(--tw);box-shadow:0 0 0 3px rgba(169,112,255,.14)}
 .btn.src.off{opacity:.4;border-style:dashed;border-color:var(--line-2);background:transparent;color:var(--muted);filter:grayscale(.8)}
 /* Day VOD parts share the YouTube column: stacked, together the same height as one source button. */
@@ -323,12 +325,12 @@ details.tips li b{color:var(--ink);font-weight:600}
       <summary>How it works</summary>
       <ul>
         <li><b>Card:</b> starts on your next unwatched series. Click any series in the schedule to open it there.</li>
-        <li><b>Sources:</b> YouTube VOD is Caedrel's edited upload of the series and the first choice. When one upload covers several series it says Combined upload and opens at the start; scroll to your series. On days where he uploads the whole day instead (Swiss Bo1 days, usually in two parts), the YouTube spot shows Day VOD · 1 and · 2; the series follow each other in order. Twitch VOD is the full broadcast of that day; it opens where you last stopped in that VOD, or at the broadcast start if you haven't watched it yet. Series follow each other directly, so after the previous series you land right at the next one; otherwise scroll forward. Live opens Caedrel's stream during the broadcast. Dimmed buttons are not available yet.</li>
+        <li><b>Sources:</b> YouTube VOD is Caedrel's edited upload of the series and the first choice; once it is there, the Twitch VOD is shown as a quiet backup. When one upload covers several series it says Combined upload and opens at the start; scroll to your series. On days where he uploads the whole day instead (Swiss Bo1 days, usually in two parts), the YouTube spot shows Day VOD · 1 and · 2; the series follow each other in order. Twitch VOD is the full broadcast of that day; it opens where you last stopped in that VOD, or at the broadcast start if you haven't watched it yet. Series follow each other directly, so after the previous series you land right at the next one; otherwise scroll forward. Live opens Caedrel's stream during the broadcast. Dimmed buttons are not available yet.</li>
         <li><b>Labels in the schedule:</b> the red YouTube and purple Twitch icons show which VODs are ready.</li>
         <li><b>Mark as watched:</b> available for the next series in line once it has been played (during a live broadcast, once you opened a source). If you didn't open a source here, it asks you to confirm. The card stays on the series so you see the result; Go to it moves on. Only the most recent one can be undone.</li>
         <li><b>Watched days:</b> days you have fully watched fold away; Show watched days brings them back.</li>
         <li><b>Teams:</b> shown as soon as you have watched every series that decides who plays, so you never see more than you already know. The result appears when you mark the series as watched.</li>
-        <li><b>Player:</b> no comments or sidebar, and a cover over suggestions when you pause or the video ends. Use its own Fullscreen button so the cover keeps working; on your phone, Open on YouTube hands the video to the app.</li>
+        <li><b>Player:</b> no timeline, video length, comments or suggestions. Tap the video to play or pause, and use the buttons below it to skip (−1m, −10s, +10s, +1m) or mute. Use the player's own Fullscreen button. Open on YouTube or Twitch shows their normal player, timeline included.</li>
         <li><b>Data:</b> a GitHub job checks the schedule, results and Caedrel's uploads every 10 minutes; this page picks them up within 5 minutes. The orange dot means a source was unreachable or updates are delayed.</li>
         <li><b>Progress:</b> kept in this browser. With sync set up (once per device, the button top right), it is shared between your devices through your repo.</li>
         <li><b>Demo:</b> the lab-glass button adds a test series at the top. It never touches your real progress.</li>
@@ -575,7 +577,9 @@ details.tips li b{color:var(--ink);font-weight:600}
     // One upload can cover several series (it then starts at the first one; scroll to yours).
     const shared=m.videoId&&real.some(x=>x.id!==m.id&&x.videoId===m.videoId);
     const ytStatus=m.videoId?(shared?"Combined upload":"Caedrel's edit"):(m.played?"Not uploaded":"After the series");
-    const twStatus=isDemo?"Not in demo":tw?"Full broadcast":(m.played?"Processing":"After the broadcast");
+    // YouTube is the default: once it is there, the Twitch VOD steps back to a quiet backup.
+    const hasYT=!!m.videoId||dayParts(m).length>0;
+    const twStatus=isDemo?"Not in demo":tw?(hasYT?"Backup":"Full broadcast"):(m.played?"Processing":"After the broadcast");
     const liveStatus=isDemo?"Not in demo":live?"Live now":(!isNaN(t0)&&now<t0?"Starts "+fmtDay(m.day)+" "+esc(m.time):"Ended");
     // No per-series upload but Caedrel's day VOD (split in parts) is there: one compact button per part.
     const parts=dayParts(m);
@@ -584,7 +588,7 @@ details.tips li b{color:var(--ink);font-weight:600}
       : src("yt",!!m.videoId,m.videoId?vodUrl(m.videoId):"",YT,"YouTube VOD",ytStatus);
     h+='<div class="sources">'
       +ytCell
-      +src("twitch",tw,tw?twitchVodUrl(m):"",TWITCH,"Twitch VOD",twStatus)
+      +src(hasYT?"twitch alt":"twitch",tw,tw?twitchVodUrl(m):"",TWITCH,"Twitch VOD",twStatus)
       +src("twitch",live,TWITCH_URL,TWITCH,"Live",liveStatus)
       +'</div>';
 
@@ -621,7 +625,7 @@ details.tips li b{color:var(--ink);font-weight:600}
     // Unwatched rows show which sources are ready as small coloured icon pills (YouTube first), next to "Next".
     if(!done){
       if(m.videoId||dayParts(m).length) tag+='<span class="tag ico yt" title="YouTube VOD ready" aria-label="YouTube VOD ready">'+YT+'</span>';
-      if(twitchAvail(m)) tag+='<span class="tag ico tw" title="Twitch VOD ready" aria-label="Twitch VOD ready">'+TWITCH+'</span>';
+      if(twitchAvail(m)&&!m.videoId&&!dayParts(m).length) tag+='<span class="tag ico tw" title="Twitch VOD ready" aria-label="Twitch VOD ready">'+TWITCH+'</span>';
     }
     tag='<span class="tags">'+tag+'</span>';
     return '<li><button type="button" class="row'+(done?' done':'')+(cur?' cur':'')+(m.id===selIdNow?' sel':'')+(m.id===DEMO.id?' demo':'')+'" data-sel="'+esc(m.id)+'" aria-pressed="'+(m.id===selIdNow)+'">'
