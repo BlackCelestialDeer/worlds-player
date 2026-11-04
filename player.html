@@ -34,6 +34,10 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
 .cover{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:16px;text-align:center;padding:24px;
   background:radial-gradient(600px 300px at 50% 40%,rgba(10,200,185,.10),transparent 70%),#020812;z-index:2}
 .cover[hidden]{display:none}
+/* Start cover: covers Twitch's start screen but lets the tap through to it (pointer-events:none), because
+   browsers only allow playback with sound after a tap inside the player itself. */
+.cover.tap{pointer-events:none;z-index:3}
+.idle.off{pointer-events:none}
 .cover h2{margin:0;font-size:clamp(20px,4vw,30px);font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-hi)}
 .cover p{margin:0;color:var(--muted);max-width:44ch;font-size:14px}
 .cbtns{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
@@ -75,6 +79,7 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
   <div class="stage" id="stage">
     <div id="player"></div>
     <div class="idle" id="idle" title="Click to play or pause"></div>
+    <div class="cover tap" id="cover-tap" hidden><h2>Tap to start</h2><p>Your first tap starts the stream; after that, use the buttons below.</p></div>
     <div class="cover" id="cover-load">
       <p id="loadmsg">Loading…</p>
     </div>
@@ -157,7 +162,8 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
     $("ext").href="https://www.youtube.com/watch?v="+yt; $("ext").textContent="Open on YouTube"; $("ext").hidden=false;
     window.onYouTubeIframeAPIReady=function(){
       var yp=new YT.Player("player",{
-        host:"https://www.youtube-nocookie.com", videoId:yt,
+        // youtube.com (not youtube-nocookie) so a signed-in Premium account is recognised: no ads.
+        host:"https://www.youtube.com", videoId:yt,
         playerVars:{controls:0,disablekb:1,rel:0,fs:0,modestbranding:1,playsinline:1,iv_load_policy:3,origin:location.origin},
         events:{
           onReady:function(){ load.hidden=true; },
@@ -211,9 +217,16 @@ main{display:grid;place-items:center;padding:16px;min-height:0}
     $("ext").href="https://www.twitch.tv/videos/"+v.id+"?t="+hms(at); $("ext").textContent="Open on Twitch"; $("ext").hidden=false;
 
     addScript("https://player.twitch.tv/js/embed/v1.js").onload=function(){
-      var tp=new Twitch.Player("player",{video:v.id,time:hms(at),parent:[location.hostname],autoplay:true,allowfullscreen:false,width:"100%",height:"100%"});
-      tp.addEventListener(Twitch.Player.READY,function(){ load.hidden=true; });
-      tp.addEventListener(Twitch.Player.PLAYING,function(){ onState("playing"); });
+      var tp=new Twitch.Player("player",{video:v.id,time:hms(at),parent:[location.hostname],autoplay:false,allowfullscreen:false,width:"100%",height:"100%"});
+      // Until playback has started once, the click layer is off and the start cover lets the tap reach Twitch.
+      // A few seconds after it starts, the cover lifts (Twitch's own bar has faded by then) and the layer takes over.
+      var started=false, tap=$("cover-tap");
+      idle.classList.add("off");
+      tp.addEventListener(Twitch.Player.READY,function(){ load.hidden=true; if(!started) tap.hidden=false; });
+      tp.addEventListener(Twitch.Player.PLAYING,function(){
+        onState("playing");
+        if(!started){ started=true; idle.classList.remove("off"); setTimeout(function(){ tap.hidden=true; },3500); }
+      });
       tp.addEventListener(Twitch.Player.PAUSE,function(){ onState("paused"); });
       tp.addEventListener(Twitch.Player.ENDED,function(){ onState("ended"); });
       P={play:function(){tp.play();},pause:function(){tp.pause();},
