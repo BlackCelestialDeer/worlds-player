@@ -54,6 +54,9 @@ body.tw .back{opacity:1;pointer-events:auto}
 .ctl button:hover{background:rgba(255,255,255,.10)}
 .ctl .pp{width:44px;height:44px;margin:0 4px;background:var(--gold);color:#10131A}
 .ctl .pp:hover{background:var(--gold-hi)}
+.ctl #cc{letter-spacing:.04em}
+.ctl #cc[aria-pressed="true"]{color:#10131A;background:var(--ink)}
+body.tw .ctl #cc{display:none}
 .ctl .sep{width:1px;height:20px;background:var(--glass-line);margin:0 4px}
 .ctl button:focus-visible,.back:focus-visible{outline:2px solid var(--hex);outline-offset:2px}
 @media (max-width:420px){.ctl button{min-width:34px;padding:0 6px}}
@@ -99,6 +102,7 @@ body.tw .back{opacity:1;pointer-events:auto}
     <svg id="ic-vol" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M3 7h3l4-3v10l-4-3H3z" fill="currentColor"/><path d="M12.5 6.5a3.5 3.5 0 010 5M14.5 4.5a6.4 6.4 0 010 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
     <svg id="ic-mute" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true" hidden><path d="M3 7h3l4-3v10l-4-3H3z" fill="currentColor"/><path d="M12.5 7l4 4M16.5 7l-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
   </button>
+  <button type="button" id="cc" aria-label="Subtitles" aria-pressed="false">CC</button>
   <button type="button" id="fs" aria-label="Fullscreen">
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M3 7V3h4M11 3h4v4M15 11v4h-4M7 15H3v-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
@@ -184,6 +188,16 @@ body.tw .back{opacity:1;pointer-events:auto}
   function store(k,v){ try{ localStorage.setItem(k,String(v)); }catch(e){} }
   function recall(k){ try{ var v=parseFloat(localStorage.getItem(k)); return isNaN(v)?null:v; }catch(e){ return null; } }
 
+  // Subtitles state (YouTube only), remembered between videos.
+  var ccOn=false, setCC=function(){};
+  try{ ccOn=localStorage.getItem("w26-cc")==="1"; }catch(e){}
+  $("cc").setAttribute("aria-pressed",ccOn);
+  $("cc").onclick=function(){
+    ccOn=!ccOn; $("cc").setAttribute("aria-pressed",ccOn);
+    try{ localStorage.setItem("w26-cc",ccOn?"1":"0"); }catch(e){}
+    setCC(ccOn); showUI();
+  };
+
   // ---------- YouTube: no native controls (no timeline or length), our pill instead ----------
   var yt=q.get("v");
   if(yt){
@@ -192,9 +206,11 @@ body.tw .back{opacity:1;pointer-events:auto}
       var yp=new YT.Player("player",{
         // youtube.com (not youtube-nocookie) so a signed-in Premium account is recognised: no ads.
         host:"https://www.youtube.com", videoId:yt,
-        playerVars:{controls:0,disablekb:1,rel:0,fs:0,modestbranding:1,playsinline:1,iv_load_policy:3,origin:location.origin},
+        playerVars:{controls:0,disablekb:1,cc_load_policy:ccOn?1:0,cc_lang_pref:"en",rel:0,fs:0,modestbranding:1,playsinline:1,iv_load_policy:3,origin:location.origin},
         events:{
-          onReady:function(){ load.hidden=true; syncMute(); },
+          onReady:function(){ load.hidden=true; syncMute(); if(ccOn) setCC(true); },
+          // Fires when the captions module has loaded: pick an English track (or the first one).
+          onApiChange:function(){ if(ccOn) pickTrack(); },
           onStateChange:function(e){
             onState(e.data===YT.PlayerState.PLAYING?"playing":e.data===YT.PlayerState.PAUSED?"paused":e.data===YT.PlayerState.ENDED?"ended":"other");
           }}
@@ -202,6 +218,15 @@ body.tw .back{opacity:1;pointer-events:auto}
       P={play:function(){yp.playVideo();},pause:function(){yp.pauseVideo();},
          time:function(){return yp.getCurrentTime();},seek:function(t){yp.seekTo(t,true);},
          muted:function(){return yp.isMuted();},setMuted:function(m){ if(m) yp.mute(); else yp.unMute(); }};
+      // Subtitles (CC): YouTube's captions module, switched from our pill. The choice is remembered.
+      function pickTrack(){
+        var list=[]; try{ list=yp.getOption("captions","tracklist")||[]; }catch(e){}
+        var t=list.find(function(x){ return /^en/.test(x.languageCode); })||list[0];
+        try{ yp.setOption("captions","track",t?{languageCode:t.languageCode}:{languageCode:"en"}); }catch(e){}
+      }
+      setCC=function(on){
+        try{ if(on){ yp.loadModule("captions"); pickTrack(); } else { yp.setOption("captions","track",{}); yp.unloadModule("captions"); } }catch(e){}
+      };
     };
     addScript("https://www.youtube.com/iframe_api");
     return;
