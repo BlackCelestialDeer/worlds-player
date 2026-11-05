@@ -8,15 +8,18 @@
 <meta name="theme-color" content="#000000">
 <title>Worlds 2026 Player</title>
 <style>
-/* Theater player: black page, the video as large as the screen allows, nothing else in sight.
-   A back button (top left) and a small control pill (bottom) appear when you move near the bottom edge,
-   tap, or pause, and fade out again while the video plays. */
+/* Theater player. Black page, the video as large as the screen allows.
+   Two quiet glass pills appear on demand and fade while the video plays:
+   - top: back (left) and settings (right: sound, subtitles, YouTube controls, open on YouTube, fullscreen)
+   - bottom: playback (skip back, play/pause, skip forward)
+   Spoiler-free by default: YouTube runs without its own controls, so no timeline or length is shown.
+   "YouTube controls" switches to YouTube's own bar (quality, timeline) until switched back. */
 :root{
   color-scheme:dark;
-  --gold:#C8AA6E; --gold-hi:#F0E6D2; --gold-lo:#785A28; --hex:#0AC8B9; --ink:#ECE7DB; --muted:#A09B8C;
-  --glass:rgba(16,20,28,.72); --glass-line:rgba(255,255,255,.10);
+  --gold:#C8AA6E; --gold-hi:#F0E6D2; --hex:#0AC8B9; --ink:#ECE7DB; --muted:#9A968C;
+  --glass:rgba(18,20,26,.74); --glass-line:rgba(255,255,255,.09); --hover:rgba(255,255,255,.10);
   --f-ui:-apple-system,BlinkMacSystemFont,"Segoe UI Variable Text","Segoe UI",Roboto,system-ui,sans-serif;
-  --ease:cubic-bezier(.2,.8,.2,1);
+  --ease:cubic-bezier(.2,.8,.2,1); --top:calc(60px + env(safe-area-inset-top));
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -25,53 +28,50 @@ body{color:var(--ink);font-family:var(--f-ui);-webkit-font-smoothing:antialiased
 main{position:fixed;inset:0;display:grid;place-items:center}
 .stage{position:relative;width:min(100vw,calc(100dvh * 16 / 9));aspect-ratio:16/9;background:#000}
 #player,#player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-/* Transparent layer over the YouTube video: catches clicks and hovers so YouTube never shows its own
-   overlays (title, suggestions). Not used for Twitch, which refuses to play when anything covers it. */
+/* Transparent layer over the spoiler-free YouTube video: catches clicks and hovers, so YouTube never shows
+   its own overlays (title, suggestions). */
 .layer{position:absolute;inset:0;z-index:1;cursor:pointer;-webkit-tap-highlight-color:transparent}
-body.tw .layer{display:none}
 body.calm .layer{cursor:none}
 
-/* Floating chrome */
+/* With a player that keeps its own controls (Twitch, or YouTube controls switched on), nothing may sit on
+   the video: it moves below the top pills, which then stay visible. */
+body.own main{top:var(--top)}
+body.own .stage{width:min(100vw,calc((100dvh - var(--top)) * 16 / 9))}
+body.own .layer,body.own .ctl{display:none}
+body.own .ui{opacity:1;pointer-events:auto}
+body.tw .tr{display:none}
+
+/* Pills */
 .ui{position:fixed;z-index:5;opacity:0;pointer-events:none;transition:opacity .25s var(--ease),transform .25s var(--ease)}
 body.show .ui{opacity:1;pointer-events:auto}
-.back{top:max(12px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left));display:inline-flex;align-items:center;gap:6px;
-  height:36px;padding:0 14px 0 10px;border-radius:999px;background:var(--glass);border:1px solid var(--glass-line);
-  -webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%);
-  color:var(--ink);font:600 13px var(--f-ui);text-decoration:none}
-.back svg{flex:none}
-.ctl{left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translate(-50%,6px);display:flex;align-items:center;gap:2px;padding:4px;
-  border-radius:999px;background:var(--glass);border:1px solid var(--glass-line);
-  -webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%)}
+.pill{display:flex;align-items:center;gap:2px;padding:3px;border-radius:999px;background:var(--glass);border:1px solid var(--glass-line);
+  -webkit-backdrop-filter:blur(16px) saturate(140%);backdrop-filter:blur(16px) saturate(140%)}
+.tl{top:max(12px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left))}
+.tr{top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right))}
+.ctl{left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translate(-50%,6px)}
 body.show .ctl{transform:translate(-50%,0)}
-body.tw .ctl{display:none}
-/* Twitch: nothing may sit on its player, so the video starts below a slim bar that holds the back button,
-   which then stays visible (taps inside Twitch's player don't reach this page to bring it back). */
-body.tw main{top:calc(56px + env(safe-area-inset-top))}
-body.tw .stage{width:min(100vw,calc((100dvh - 56px - env(safe-area-inset-top)) * 16 / 9))}
-body.tw .back{opacity:1;pointer-events:auto}
-.ctl button{display:grid;place-items:center;min-width:40px;height:36px;padding:0 8px;border:0;border-radius:999px;background:transparent;
-  color:var(--ink);font:600 12px var(--f-ui);font-variant-numeric:tabular-nums;cursor:pointer;transition:background .15s var(--ease)}
-.ctl button:hover{background:rgba(255,255,255,.10)}
-.ctl .pp{width:44px;height:44px;margin:0 4px;background:var(--gold);color:#10131A}
+.ib{display:grid;place-items:center;min-width:36px;height:34px;padding:0 9px;border:0;border-radius:999px;background:transparent;
+  color:var(--ink);font:600 12px/1 var(--f-ui);font-variant-numeric:tabular-nums;text-decoration:none;cursor:pointer;
+  transition:background .15s var(--ease),color .15s var(--ease)}
+.ib:hover{background:var(--hover)}
+.ib:focus-visible{outline:2px solid var(--hex);outline-offset:1px}
+.ib svg{display:block}
+.back{display:inline-flex;align-items:center;gap:4px;padding:0 12px 0 8px;font-size:13px}
+.ib[aria-pressed="true"]{background:var(--ink);color:#111}
+.ctl .ib{min-width:44px;height:38px}
+.ctl .pp{width:46px;height:46px;margin:0 6px;background:var(--gold);color:#111}
 .ctl .pp:hover{background:var(--gold-hi)}
-.ctl #cc{letter-spacing:.04em}
-.ctl .yt{display:grid;place-items:center;min-width:40px;height:36px;padding:0 8px;border-radius:999px;color:var(--ink);transition:background .15s var(--ease)}
-.ctl .yt:hover{background:rgba(255,255,255,.10);color:#FF3D3D}
-.ctl .yt:focus-visible{outline:2px solid var(--hex);outline-offset:2px}
-body.tw .ctl .yt{display:none}
-.ctl #cc[aria-pressed="true"]{color:#10131A;background:var(--ink)}
-body.tw .ctl #cc{display:none}
-.ctl .sep{width:1px;height:20px;background:var(--glass-line);margin:0 4px}
-.ctl button:focus-visible,.back:focus-visible{outline:2px solid var(--hex);outline-offset:2px}
-@media (max-width:420px){.ctl button{min-width:34px;padding:0 6px}}
+.ib.yt:hover{color:#FF4343}
+body.native .sf-only{display:none}
+@media (max-width:420px){.ctl .ib{min-width:38px;padding:0 6px}.tr .ib{min-width:32px;padding:0 7px}}
 
-/* Covers: loading, and end of a YouTube video (hides its suggestion grid) */
+/* Covers: loading, and the end of a YouTube video (hides its suggestion grid) */
 .cover{position:absolute;inset:0;z-index:2;display:grid;place-items:center;align-content:center;gap:14px;text-align:center;padding:24px;background:#000}
-.cover[hidden]{display:none}
-.cover h2{margin:0;font-size:clamp(18px,3vw,26px);font-weight:700;color:var(--gold-hi)}
+.cover h2{margin:0;font-size:clamp(18px,3vw,24px);font-weight:700;color:var(--gold-hi)}
 .cover p{margin:0;color:var(--muted);font-size:14px;max-width:44ch}
-.btn{font:600 14px var(--f-ui);padding:10px 18px;border-radius:999px;border:1px solid var(--gold-lo);background:transparent;color:var(--gold-hi);cursor:pointer}
+.btn{font:600 14px var(--f-ui);padding:10px 18px;border-radius:999px;border:1px solid rgba(200,170,110,.5);background:transparent;color:var(--gold-hi);cursor:pointer}
 .msg{color:var(--muted);text-align:center;padding:24px;max-width:52ch}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body class="show">
@@ -88,31 +88,40 @@ body.tw .ctl #cc{display:none}
   </div>
 </main>
 
-<a class="ui back" id="back" href="./" aria-label="Back to the schedule">
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Schedule
-</a>
+<nav class="ui pill tl">
+  <a class="ib back" id="back" href="./" aria-label="Back to the schedule">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Schedule
+  </a>
+</nav>
 
-<div class="ui ctl" id="ctl" role="toolbar" aria-label="Playback">
-  <button type="button" data-skip="-60" aria-label="Back 1 minute">−1m</button>
-  <button type="button" data-skip="-10" aria-label="Back 10 seconds">−10</button>
-  <button type="button" class="pp" id="pp" aria-label="Play">
-    <svg id="ic-play" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" fill="currentColor"/></svg>
-    <svg id="ic-pause" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" hidden><path d="M4 2.5h2.8v11H4zM9.2 2.5H12v11H9.2z" fill="currentColor"/></svg>
-  </button>
-  <button type="button" data-skip="10" aria-label="Forward 10 seconds">+10</button>
-  <button type="button" data-skip="60" aria-label="Forward 1 minute">+1m</button>
-  <span class="sep" aria-hidden="true"></span>
-  <button type="button" id="mute" aria-label="Mute">
+<div class="ui pill tr" role="toolbar" aria-label="Settings">
+  <button class="ib sf-only" type="button" id="mute" title="Mute (M)" aria-label="Mute">
     <svg id="ic-vol" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M3 7h3l4-3v10l-4-3H3z" fill="currentColor"/><path d="M12.5 6.5a3.5 3.5 0 010 5M14.5 4.5a6.4 6.4 0 010 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
     <svg id="ic-mute" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true" hidden><path d="M3 7h3l4-3v10l-4-3H3z" fill="currentColor"/><path d="M12.5 7l4 4M16.5 7l-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
   </button>
-  <button type="button" id="cc" aria-label="Subtitles" aria-pressed="false">CC</button>
-  <a class="yt" id="ytlink" href="#" target="_blank" rel="noopener" aria-label="Watch on YouTube" title="Watch on YouTube (continues where you are)">
-    <svg width="20" height="14" viewBox="0 0 18 13" aria-hidden="true"><rect width="18" height="13" rx="3.2" fill="currentColor"/><path d="M7.2 3.6v5.8l4.9-2.9z" fill="#10131A"/></svg>
+  <button class="ib sf-only" type="button" id="cc" title="Subtitles" aria-label="Subtitles" aria-pressed="false">
+    <svg width="20" height="16" viewBox="0 0 20 16" fill="none" aria-hidden="true"><rect x="1.5" y="2" width="17" height="12" rx="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M8.6 6.4a2 2 0 100 3.2M14.4 6.4a2 2 0 100 3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+  </button>
+  <button class="ib" type="button" id="native" title="YouTube controls: quality and more (shows the timeline)" aria-label="YouTube controls (shows the timeline)" aria-pressed="false">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M3 5h7M13 5h2M3 13h2M8 13h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="11.5" cy="5" r="1.8" stroke="currentColor" stroke-width="1.5"/><circle cx="6.5" cy="13" r="1.8" stroke="currentColor" stroke-width="1.5"/></svg>
+  </button>
+  <a class="ib yt" id="ytlink" href="#" target="_blank" rel="noopener" title="Watch on YouTube (continues here)" aria-label="Watch on YouTube">
+    <svg width="20" height="14" viewBox="0 0 18 13" aria-hidden="true"><rect width="18" height="13" rx="3.2" fill="currentColor"/><path d="M7.2 3.6v5.8l4.9-2.9z" fill="#111"/></svg>
   </a>
-  <button type="button" id="fs" aria-label="Fullscreen">
+  <button class="ib sf-only" type="button" id="fs" title="Fullscreen (F)" aria-label="Fullscreen">
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M3 7V3h4M11 3h4v4M15 11v4h-4M7 15H3v-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
+</div>
+
+<div class="ui pill ctl" id="ctl" role="toolbar" aria-label="Playback">
+  <button class="ib" type="button" data-skip="-60" title="Back 1 minute" aria-label="Back 1 minute">−1m</button>
+  <button class="ib" type="button" data-skip="-10" title="Back 10 seconds (←)" aria-label="Back 10 seconds">−10</button>
+  <button class="ib pp" type="button" id="pp" title="Play / pause (Space)" aria-label="Play">
+    <svg id="ic-play" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" fill="currentColor"/></svg>
+    <svg id="ic-pause" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" hidden><path d="M4 2.5h2.8v11H4zM9.2 2.5H12v11H9.2z" fill="currentColor"/></svg>
+  </button>
+  <button class="ib" type="button" data-skip="10" title="Forward 10 seconds (→)" aria-label="Forward 10 seconds">+10</button>
+  <button class="ib" type="button" data-skip="60" title="Forward 1 minute" aria-label="Forward 1 minute">+1m</button>
 </div>
 
 <script>
@@ -125,7 +134,7 @@ body.tw .ctl #cc{display:none}
 
   // SVG elements have no .hidden property, so toggle the attribute.
   function vis(el,on){ if(on) el.removeAttribute("hidden"); else el.setAttribute("hidden",""); }
-  function fail(text){ $("main").innerHTML='<p class="msg">'+text+'</p>'; body.classList.add("tw"); showUI(true); }
+  function fail(text){ $("main").innerHTML='<p class="msg">'+text+'</p>'; body.classList.add("own"); }
 
   // Back to the schedule (in the home-screen app there is no browser back button).
   $("back").addEventListener("click",function(e){
@@ -133,7 +142,7 @@ body.tw .ctl #cc{display:none}
     if(document.referrer&&document.referrer.indexOf(base)===0&&history.length>1){ e.preventDefault(); history.back(); }
   });
 
-  // ---------- Showing and hiding the controls ----------
+  // ---------- Showing and hiding the pills (spoiler-free mode) ----------
   // Visible while paused, and for 2.5 s after you move near the top or bottom edge, tap, or press a key.
   var uiTimer=null, overUI=false;
   function showUI(stay){
@@ -141,11 +150,11 @@ body.tw .ctl #cc{display:none}
     if(!stay&&playing) uiTimer=setTimeout(function(){ if(!overUI&&playing){ body.classList.remove("show"); body.classList.add("calm"); } },2500);
   }
   document.addEventListener("mousemove",function(e){
-    if(e.clientY>window.innerHeight-120||e.clientY<80) showUI(); else body.classList.remove("calm");
+    if(e.clientY>window.innerHeight-120||e.clientY<90) showUI(); else body.classList.remove("calm");
   });
-  ["ctl","back"].forEach(function(id){
-    $(id).addEventListener("mouseenter",function(){ overUI=true; showUI(); });
-    $(id).addEventListener("mouseleave",function(){ overUI=false; showUI(); });
+  document.querySelectorAll(".ui").forEach(function(el){
+    el.addEventListener("mouseenter",function(){ overUI=true; showUI(); });
+    el.addEventListener("mouseleave",function(){ overUI=false; showUI(); });
   });
   document.addEventListener("touchstart",function(){ showUI(); },{passive:true});
 
@@ -164,7 +173,7 @@ body.tw .ctl #cc{display:none}
 
   layer.addEventListener("click",function(){ togglePlay(); showUI(); });
   layer.addEventListener("dblclick",toggleFS);
-  $("pp").onclick=function(){ togglePlay(); };
+  $("pp").onclick=togglePlay;
   $("mute").onclick=function(){ if(!P) return; P.setMuted(!P.muted()); setTimeout(syncMute,150); showUI(); };
   document.querySelectorAll("#ctl [data-skip]").forEach(function(b){ b.onclick=function(){ skip(Number(b.dataset.skip)); }; });
   document.addEventListener("keydown",function(e){
@@ -177,7 +186,7 @@ body.tw .ctl #cc{display:none}
     showUI();
   });
 
-  // Fullscreen on the whole page, so our controls stay available.
+  // Fullscreen on the whole page, so the pills stay available.
   function toggleFS(){
     var d=document, el=d.documentElement;
     if(d.fullscreenElement||d.webkitFullscreenElement){ (d.exitFullscreen||d.webkitExitFullscreen).call(d); return; }
@@ -195,20 +204,66 @@ body.tw .ctl #cc{display:none}
   function store(k,v){ try{ localStorage.setItem(k,String(v)); }catch(e){} }
   function recall(k){ try{ var v=parseFloat(localStorage.getItem(k)); return isNaN(v)?null:v; }catch(e){ return null; } }
 
-  // Subtitles state (YouTube only), remembered between videos.
-  var ccOn=false, setCC=function(){};
-  try{ ccOn=localStorage.getItem("w26-cc")==="1"; }catch(e){}
-  $("cc").setAttribute("aria-pressed",ccOn);
-  $("cc").onclick=function(){
-    ccOn=!ccOn; $("cc").setAttribute("aria-pressed",ccOn);
-    try{ localStorage.setItem("w26-cc",ccOn?"1":"0"); }catch(e){}
-    setCC(ccOn); showUI();
-  };
-
-  // ---------- YouTube: no native controls (no timeline or length), our pill instead ----------
+  // ---------- YouTube ----------
   var yt=q.get("v");
   if(yt){
     if(!/^[A-Za-z0-9_-]{11}$/.test(yt)) return fail("No video selected. Open this player from your Worlds schedule.");
+
+    // Subtitles, remembered between videos (spoiler-free mode; YouTube's own bar has its own CC button).
+    var ccOn=false; try{ ccOn=localStorage.getItem("w26-cc")==="1"; }catch(e){}
+    $("cc").setAttribute("aria-pressed",ccOn);
+    // YouTube controls: off by default on every video, so the timeline only shows when you ask for it.
+    var native=false, yp=null;
+
+    function pickTrack(){
+      var list=[]; try{ list=yp.getOption("captions","tracklist")||[]; }catch(e){}
+      var t=list.find(function(x){ return /^en/.test(x.languageCode); })||list[0];
+      try{ yp.setOption("captions","track",t?{languageCode:t.languageCode}:{languageCode:"en"}); }catch(e){}
+    }
+    function setCC(on){
+      if(!yp) return;
+      try{ if(on){ yp.loadModule("captions"); pickTrack(); } else { yp.setOption("captions","track",{}); yp.unloadModule("captions"); } }catch(e){}
+    }
+    $("cc").onclick=function(){
+      ccOn=!ccOn; $("cc").setAttribute("aria-pressed",ccOn);
+      try{ localStorage.setItem("w26-cc",ccOn?"1":"0"); }catch(e){}
+      setCC(ccOn); showUI();
+    };
+
+    // (Re)build the YouTube player: spoiler-free (no controls, our pills) or with YouTube's own controls.
+    function buildYT(startAt,autoplay){
+      if(yp){ try{ yp.destroy(); }catch(e){} }
+      var holder=document.createElement("div"); holder.id="player";
+      var old=$("player"); old.parentNode.replaceChild(holder,old);
+      yp=new YT.Player("player",{
+        // youtube.com (not youtube-nocookie) so a signed-in Premium account is recognised: no ads.
+        host:"https://www.youtube.com", videoId:yt,
+        playerVars:{controls:native?1:0,disablekb:native?0:1,fs:native?1:0,cc_load_policy:ccOn?1:0,cc_lang_pref:"en",
+          rel:0,modestbranding:1,playsinline:1,iv_load_policy:3,start:Math.floor(startAt||0),origin:location.origin},
+        events:{
+          onReady:function(){
+            load.hidden=true; syncMute();
+            if(startAt) yp.seekTo(startAt,true);
+            if(autoplay) yp.playVideo();
+            if(ccOn&&!native) setCC(true);
+          },
+          onApiChange:function(){ if(ccOn&&!native) pickTrack(); },
+          onStateChange:function(e){
+            onState(e.data===YT.PlayerState.PLAYING?"playing":e.data===YT.PlayerState.PAUSED?"paused":e.data===YT.PlayerState.ENDED?"ended":"other");
+          }}
+      });
+      P={play:function(){yp.playVideo();},pause:function(){yp.pauseVideo();},
+         time:function(){ try{ return yp.getCurrentTime()||0; }catch(e){ return 0; } },seek:function(t){yp.seekTo(t,true);},
+         muted:function(){return yp.isMuted();},setMuted:function(m){ if(m) yp.mute(); else yp.unMute(); }};
+    }
+    $("native").onclick=function(){
+      var t=P?P.time():0, was=playing;
+      native=!native;
+      $("native").setAttribute("aria-pressed",native);
+      body.classList.toggle("own",native); body.classList.toggle("native",native);
+      buildYT(t,was); showUI(true);
+    };
+
     // Watch on YouTube: opens the video there (the app on a phone), continuing at the current spot.
     var ytl=$("ytlink");
     ytl.href="https://www.youtube.com/watch?v="+yt;
@@ -217,40 +272,16 @@ body.tw .ctl #cc{display:none}
       ytl.href="https://www.youtube.com/watch?v="+yt+(t>5?"&t="+t+"s":"");
       if(P&&playing) P.pause();
     });
-    window.onYouTubeIframeAPIReady=function(){
-      var yp=new YT.Player("player",{
-        // youtube.com (not youtube-nocookie) so a signed-in Premium account is recognised: no ads.
-        host:"https://www.youtube.com", videoId:yt,
-        playerVars:{controls:0,disablekb:1,cc_load_policy:ccOn?1:0,cc_lang_pref:"en",rel:0,fs:0,modestbranding:1,playsinline:1,iv_load_policy:3,origin:location.origin},
-        events:{
-          onReady:function(){ load.hidden=true; syncMute(); if(ccOn) setCC(true); },
-          // Fires when the captions module has loaded: pick an English track (or the first one).
-          onApiChange:function(){ if(ccOn) pickTrack(); },
-          onStateChange:function(e){
-            onState(e.data===YT.PlayerState.PLAYING?"playing":e.data===YT.PlayerState.PAUSED?"paused":e.data===YT.PlayerState.ENDED?"ended":"other");
-          }}
-      });
-      P={play:function(){yp.playVideo();},pause:function(){yp.pauseVideo();},
-         time:function(){return yp.getCurrentTime();},seek:function(t){yp.seekTo(t,true);},
-         muted:function(){return yp.isMuted();},setMuted:function(m){ if(m) yp.mute(); else yp.unMute(); }};
-      // Subtitles (CC): YouTube's captions module, switched from our pill. The choice is remembered.
-      function pickTrack(){
-        var list=[]; try{ list=yp.getOption("captions","tracklist")||[]; }catch(e){}
-        var t=list.find(function(x){ return /^en/.test(x.languageCode); })||list[0];
-        try{ yp.setOption("captions","track",t?{languageCode:t.languageCode}:{languageCode:"en"}); }catch(e){}
-      }
-      setCC=function(on){
-        try{ if(on){ yp.loadModule("captions"); pickTrack(); } else { yp.setOption("captions","track",{}); yp.unloadModule("captions"); } }catch(e){}
-      };
-    };
+
+    window.onYouTubeIframeAPIReady=function(){ buildYT(0,false); };
     addScript("https://www.youtube.com/iframe_api");
     return;
   }
 
   // ---------- Twitch VOD of a broadcast day ----------
-  // Twitch refuses to play when anything covers its player, so it runs plain with its own controls.
+  // Twitch refuses to play when anything covers its player, so it runs with its own controls.
   // Params: tw=1, day=YYYY-MM-DD, time=HH:MM (broadcast start, Amsterdam). Other params are ignored.
-  body.classList.add("tw");
+  body.classList.add("tw","own");
   if(q.get("tw")!=="1"||!/^\d{4}-\d{2}-\d{2}$/.test(q.get("day")||"")||!/^\d{2}:\d{2}$/.test(q.get("time")||""))
     return fail("No video selected. Open this player from your Worlds schedule.");
   var broadcast=new Date(q.get("day")+"T"+q.get("time")+":00").getTime();
