@@ -1292,9 +1292,9 @@
    "tentative": false,
    "teamA": "GEN",
    "teamB": "LYON",
-   "played": false,
-   "winner": "",
-   "score": "",
+   "played": true,
+   "winner": "GEN",
+   "score": "3-0",
    "dependsOn": [
     "sw-r1-1",
     "sw-r1-2",
