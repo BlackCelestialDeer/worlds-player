@@ -1448,9 +1448,9 @@
    "tentative": false,
    "teamA": "GEN",
    "teamB": "IG",
-   "played": false,
-   "winner": "",
-   "score": "",
+   "played": true,
+   "winner": "GEN",
+   "score": "3-0",
    "dependsOn": [
     "ko-qf3",
     "ko-qf4"
