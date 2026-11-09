@@ -1469,9 +1469,9 @@
    "tentative": false,
    "teamA": "BLG",
    "teamB": "T1",
-   "played": false,
-   "winner": "",
-   "score": "",
+   "played": true,
+   "winner": "BLG",
+   "score": "3-1",
    "dependsOn": [
     "ko-qf1",
     "ko-qf2"
@@ -1488,8 +1488,8 @@
    "day": "2026-11-14",
    "time": "20:00",
    "tentative": false,
-   "teamA": "",
-   "teamB": "GEN",
+   "teamA": "GEN",
+   "teamB": "BLG",
    "played": false,
    "winner": "",
    "score": "",
